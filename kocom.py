@@ -146,6 +146,12 @@ class RS485Wrapper:
         sock.settimeout(10)
         try:
             sock.connect((SOCKET_SERVER, SOCKET_PORT))
+        except socket.timeout:
+            logging.warning('[RS485] Socket connection timeout | server {}, port {} - Check if device is powered on and network is accessible'.format(SOCKET_SERVER, SOCKET_PORT))
+            return False
+        except ConnectionRefusedError:
+            logging.warning('[RS485] Connection refused | server {}, port {} - Check if the port is correct'.format(SOCKET_SERVER, SOCKET_PORT))
+            return False
         except Exception as e:
             logging.error('[RS485] Socket connection failure : {} | server {}, port {}'.format(e, SOCKET_SERVER, SOCKET_PORT))
             return False
@@ -975,6 +981,10 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read(CONFIG_FILE)
 
+    # Connection retry configuration
+    MAX_RETRIES = 10
+    RETRY_DELAY = 30  # seconds
+
     if config.get('RS485', 'type') == 'serial':
         import serial
         rs485 = RS485Wrapper(serial_port = config.get('RS485', 'serial_port', fallback=None))
@@ -984,9 +994,22 @@ if __name__ == "__main__":
     else:
         logging.error('[CONFIG] invalid type value in [RS485]: only "serial" or "socket" is allowed. exit')
         exit(1)
-    if rs485.connect() == False:
-        logging.error('[RS485] connection error. exit')
-        exit(1)
+    
+    # Retry connection with exponential backoff
+    retry_count = 0
+    while retry_count < MAX_RETRIES:
+        if rs485.connect():
+            logging.info('[RS485] Successfully connected')
+            break
+        retry_count += 1
+        if retry_count < MAX_RETRIES:
+            wait_time = min(RETRY_DELAY * retry_count, 300)  # Max 5 minutes
+            logging.warning('[RS485] Connection attempt {} of {} failed. Retrying in {} seconds...'.format(retry_count, MAX_RETRIES, wait_time))
+            time.sleep(wait_time)
+        else:
+            logging.error('[RS485] Failed to connect after {} attempts. Please check your configuration.'.format(MAX_RETRIES))
+            logging.error('[RS485] Verify: 1) Device IP and port, 2) Network connectivity, 3) Device power status')
+            exit(1)
 
     mqttc = init_mqttc()
     if mqttc == False:
