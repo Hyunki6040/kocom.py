@@ -46,27 +46,26 @@ mqtt_password: ""  # 비워두기
 
 ⚠️ **중요**: Mosquitto 브로커에서 `anonymous: true` 설정 필수!
 
-### 방법 2: 전용 사용자 계정 생성
+### 방법 2: 전용 사용자 계정 생성 (권장) ✅
 
-1. **Home Assistant에서 사용자 생성**:
-   - 설정 → 사용자 → 사용자 추가
-   - 사용자명: `kocom_user`
-   - 비밀번호: 강력한 비밀번호 설정
-   - **관리자 권한 주지 않기!**
-
-2. **Mosquitto 브로커 설정**:
+1. **Mosquitto 브로커 설정**:
    ```yaml
    logins:
-     - username: kocom_user
-       password: your_password
+     - username: hk
+       password: hk0129
+   anonymous: false
    ```
 
-3. **Kocom 애드온 설정**:
+2. **Kocom 애드온 Configuration 설정**:
    ```yaml
    mqtt_allow_anonymous: false
-   mqtt_username: "kocom_user"
-   mqtt_password: "your_password"
+   mqtt_username: "hk"
+   mqtt_password: "hk0129"
    ```
+
+3. **애드온 재시작**:
+   - Mosquitto broker 재시작
+   - Kocom 애드온 재시작
 
 ### 방법 3: Home Assistant 사용자 활용
 
@@ -109,9 +108,9 @@ Socket Server: 192.168.0.222
 Socket Port: 8899
 MQTT Server: core-mosquitto
 MQTT Port: 1883
-MQTT Allow Anonymous: true  # ← 이것만 true로!
-MQTT Username: (비워두기)
-MQTT Password: (비워두기)
+MQTT Allow Anonymous: false
+MQTT Username: hk
+MQTT Password: hk0129
 ```
 
 ## 📊 연결 확인
