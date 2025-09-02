@@ -10,7 +10,7 @@
 
 # Option 2: Socket 연결 (Elfin EW11 등 네트워크 RS485)
 type = socket
-socket_server = 39.125.16.174
+socket_server = 192.168.0.222
 socket_port = 8899
 
 
