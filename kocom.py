@@ -980,8 +980,64 @@ def listen_hexdata():
 if __name__ == "__main__":
     logging.basicConfig(format='%(levelname)s[%(asctime)s]:%(message)s ', level=logging.DEBUG)
 
+    # Try to read Home Assistant addon options first
+    ha_options = None
+    try:
+        with open('/data/options.json', 'r') as f:
+            ha_options = json.load(f)
+            logging.info('[CONFIG] Using Home Assistant addon options')
+    except:
+        logging.info('[CONFIG] No HA addon options found, using kocom.conf')
+    
     config = configparser.ConfigParser()
-    config.read(CONFIG_FILE)
+    
+    if ha_options:
+        # Convert HA options to config format
+        config.add_section('RS485')
+        config.set('RS485', 'type', ha_options.get('rs485_type', 'serial'))
+        if ha_options.get('rs485_type') == 'socket':
+            config.set('RS485', 'socket_server', ha_options.get('socket_server', ''))
+            config.set('RS485', 'socket_port', str(ha_options.get('socket_port', 8899)))
+        else:
+            config.set('RS485', 'serial_port', ha_options.get('serial_port', '/dev/ttyUSB0'))
+        
+        config.add_section('MQTT')
+        config.set('MQTT', 'mqtt_server', ha_options.get('mqtt_server', 'core-mosquitto'))
+        config.set('MQTT', 'mqtt_port', str(ha_options.get('mqtt_port', 1883)))
+        config.set('MQTT', 'mqtt_allow_anonymous', str(ha_options.get('mqtt_allow_anonymous', False)))
+        config.set('MQTT', 'mqtt_username', ha_options.get('mqtt_username', ''))
+        config.set('MQTT', 'mqtt_password', ha_options.get('mqtt_password', ''))
+        
+        config.add_section('Log')
+        config.set('Log', 'show_query_hex', str(ha_options.get('debug_mode', False)))
+        config.set('Log', 'show_recv_hex', str(ha_options.get('debug_mode', False)))
+        config.set('Log', 'show_mqtt_publish', str(ha_options.get('debug_mode', False)))
+        
+        # Set default sections if not present
+        if not config.has_section('Device'):
+            config.add_section('Device')
+            config.set('Device', 'enabled', 'fan, elevator, light_livingroom, light_room1, light_room2, light_room3, light_kitchen, thermo_livingroom, thermo_room1, thermo_room2, thermo_room3')
+        
+        if not config.has_section('Elevator'):
+            config.add_section('Elevator')
+            config.set('Elevator', 'type', 'rs485')
+            config.set('Elevator', 'rs485_floor', str(ha_options.get('elevator_floor', 15)))
+        
+        if not config.has_section('User'):
+            config.add_section('User')
+            config.set('User', 'init_temp', str(ha_options.get('init_temp', 23)))
+            config.set('User', 'init_fan_mode', 'Medium')
+            config.set('User', 'light_count', '3')
+        
+        logging.info('[CONFIG] RS485 type: {}'.format(config.get('RS485', 'type')))
+        if config.get('RS485', 'type') == 'socket':
+            logging.info('[CONFIG] Socket server: {}:{}'.format(
+                config.get('RS485', 'socket_server'),
+                config.get('RS485', 'socket_port')
+            ))
+    else:
+        # Fallback to reading kocom.conf file
+        config.read(CONFIG_FILE)
 
     # Connection retry configuration
     MAX_RETRIES = 10
