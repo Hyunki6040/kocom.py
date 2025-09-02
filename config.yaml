@@ -1,6 +1,6 @@
 ---
 name: Kocom Wallpad with RS485 for 힐스테이트푸르지오수원
-version: 2025.01.001
+version: 2025.01.002
 slug: kocom_py
 description: Kocom Wallpad RS485 integration for Home Assistant - Updated for HA 2025.x
 arch:
@@ -9,7 +9,7 @@ arch:
   - aarch64
   - amd64
   - i386
-url: https://github.com/vifrost/kocom.py
+url: https://github.com/Hyunki6040/kocom.py
 startup: application
 boot: auto
 uart: true
@@ -41,5 +41,4 @@ schema:
   socket_server: str?
   socket_port: "int(1,65535)?"
   debug_mode: bool
-image: ghcr.io/home-assistant/{arch}-addon-kocom
 init: false
