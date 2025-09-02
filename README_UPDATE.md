@@ -25,15 +25,20 @@
 
 ## 🛠️ 설치 방법
 
-### 방법 1: Fork 후 개인 저장소 사용 (권장)
+### 방법 1: 직접 저장소 추가 (권장) ⭐
 
 1. **Home Assistant에 저장소 추가**
-   - 설정 → 애드온 → 애드온 스토어 → ⋮ → 저장소
-   - 추가: `https://github.com/Hyunki6040/kocom.py`
+   - 설정 → 애드온 → 애드온 스토어 → ⋮ (우측 상단) → 저장소
+   - **다음 URL을 복사해서 붙여넣기:**
+   ```
+   https://github.com/Hyunki6040/kocom.py
+   ```
+   - ADD 버튼 클릭
 
-3. **애드온 설치**
-   - 스토어에서 "Kocom Wallpad with RS485" 찾기
-   - 설치 → 시작
+2. **애드온 설치**
+   - 스토어 하단에서 "Kocom Wallpad with RS485 for 덕계역금강펜트리움" 찾기
+   - INSTALL 클릭 (5-10분 소요)
+   - START 버튼으로 실행
 
 ### 방법 2: 로컬 빌드 (개발자용)
 
