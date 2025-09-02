@@ -1,8 +1,10 @@
 ---
 name: Kocom Wallpad with RS485 for 덕계역금강펜트리움
-version: 2025.01.008
+version: 2025.01.009
 slug: kocom_py
 description: Kocom Wallpad RS485 integration for Home Assistant - Updated for HA 2025.x by robert
+stage: stable
+auto_update: true
 arch:
   - armhf
   - armv7
