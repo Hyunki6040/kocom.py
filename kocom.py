@@ -84,7 +84,8 @@ def init_mqttc():
     # Check if we should use anonymous connection
     if config.get('MQTT','mqtt_allow_anonymous') == 'True' or not mqtt_username:
         logtxt = "[MQTT] connecting (anonymous)"
-        # Don't set username/password for anonymous connection
+        # Explicitly clear any existing credentials for anonymous connection
+        mqttc.username_pw_set(username=None, password=None)
     else:
         logtxt = f"[MQTT] connecting with username: {mqtt_username}"
         mqttc.username_pw_set(username=mqtt_username, password=mqtt_password)
@@ -1037,7 +1038,7 @@ if __name__ == "__main__":
         config.add_section('MQTT')
         config.set('MQTT', 'mqtt_server', ha_options.get('mqtt_server', 'core-mosquitto'))
         config.set('MQTT', 'mqtt_port', str(ha_options.get('mqtt_port', 1883)))
-        config.set('MQTT', 'mqtt_allow_anonymous', str(ha_options.get('mqtt_allow_anonymous', False)))
+        config.set('MQTT', 'mqtt_allow_anonymous', str(ha_options.get('mqtt_allow_anonymous', True)))
         config.set('MQTT', 'mqtt_username', ha_options.get('mqtt_username', ''))
         config.set('MQTT', 'mqtt_password', ha_options.get('mqtt_password', ''))
         
