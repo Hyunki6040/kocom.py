@@ -81,11 +81,13 @@ def init_mqttc():
     mqtt_username = config.get('MQTT','mqtt_username', fallback='')
     mqtt_password = config.get('MQTT','mqtt_password', fallback='')
     
-    if config.get('MQTT','mqtt_allow_anonymous') != 'True' and mqtt_username:
+    # Check if we should use anonymous connection
+    if config.get('MQTT','mqtt_allow_anonymous') == 'True' or not mqtt_username:
+        logtxt = "[MQTT] connecting (anonymous)"
+        # Don't set username/password for anonymous connection
+    else:
         logtxt = f"[MQTT] connecting with username: {mqtt_username}"
         mqttc.username_pw_set(username=mqtt_username, password=mqtt_password)
-    else:
-        logtxt = "[MQTT] connecting (anonymous)"
 
     mqtt_server = config.get('MQTT','mqtt_server')
     mqtt_port = int(config.get('MQTT','mqtt_port'))
@@ -123,9 +125,13 @@ def mqtt_on_connect(mqttc, userdata, flags, rc, properties=None):
     else:
         logging.error("[MQTT] Connection error - {}: {}".format(rc, mqtt.connack_string(rc)))
 
-def mqtt_on_disconnect(mqttc, userdata, rc=0, properties=None):
-    # Updated for paho-mqtt 2.x with properties parameter
-    logging.error("[MQTT] Disconnected - "+str(rc))
+def mqtt_on_disconnect(mqttc, userdata, disconnect_flags, reason_code, properties=None):
+    # Updated for paho-mqtt 2.x with all required parameters
+    # reason_code replaces rc in new version
+    if reason_code == 0:
+        logging.info("[MQTT] Disconnected normally")
+    else:
+        logging.error(f"[MQTT] Disconnected - Reason: {reason_code}")
 
 
 # serial/socket communication class & functions--------------------

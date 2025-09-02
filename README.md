@@ -228,15 +228,6 @@ MIT License - 자유롭게 사용 및 수정 가능
 
 ---
 
-## 📞 연락처
-
-- **관리자**: robert
-- **아파트**: 덕계역금강펜트리움
-- **GitHub**: [Hyunki6040/kocom.py](https://github.com/Hyunki6040/kocom.py)
-- **버전**: 2025.01.009
-
----
-
 <div align="center">
   
 **⭐ 도움이 되셨다면 Star를 눌러주세요!**
