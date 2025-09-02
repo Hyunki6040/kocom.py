@@ -2,28 +2,31 @@
 # -*- coding: utf-8 -*-
 
 '''
- python kocom script
-
- : forked from script written by vifrost, kyet, 룰루해피, 따분, Susu Daddy, harwin1
-
- apt-get install mosquitto
- python3 -m pip install pyserial
- python3 -m pip install paho-mqtt
+ Kocom Wallpad RS485 Integration for Home Assistant
+ Updated for Python 3.12 and HA 2025.x compatibility
+ 
+ Forked from script written by vifrost, kyet, 룰루해피, 따분, Susu Daddy, harwin1
 '''
+
 import os
+import sys
 import time
 import platform
 import threading
 import queue
 import random
 import json
-import paho.mqtt.client as mqtt
+import socket
+import serial
 import logging
 import configparser
+from typing import Optional, Dict, Any, Union
+import paho.mqtt.client as mqtt
+from paho.mqtt.client import MQTTMessage, Client
 
 
 # define -------------------------------
-SW_VERSION = '2023.08.012'
+SW_VERSION = '2025.01.001'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 
@@ -51,7 +54,8 @@ room_h_dic = {'livingroom':'00', 'myhome':'00', 'room1':'01', 'room2':'02', 'roo
 # mqtt functions ----------------------------
 
 def init_mqttc():
-    mqttc = mqtt.Client()
+    # Updated for paho-mqtt 2.x compatibility
+    mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     mqttc.on_message = mqtt_on_message
     mqttc.on_subscribe = mqtt_on_subscribe
     mqttc.on_connect = mqtt_on_connect
@@ -82,21 +86,23 @@ def mqtt_on_subscribe(mqttc, obj, mid, granted_qos):
 def mqtt_on_log(mqttc, obj, level, string):
     logging.info("[MQTT] on_log : "+string)
 
-def mqtt_on_connect(mqttc, userdata, flags, rc):
+def mqtt_on_connect(mqttc, userdata, flags, rc, properties=None):
+    # Updated for paho-mqtt 2.x with properties parameter
     if rc == 0:
         logging.info("[MQTT] Connected - 0: OK")
         mqttc.subscribe('kocom/#', 0)
     else:
         logging.error("[MQTT] Connection error - {}: {}".format(rc, mqtt.connack_string(rc)))
 
-def mqtt_on_disconnect(mqttc, userdata, rc=0):
+def mqtt_on_disconnect(mqttc, userdata, rc=0, properties=None):
+    # Updated for paho-mqtt 2.x with properties parameter
     logging.error("[MQTT] Disconnected - "+str(rc))
 
 
 # serial/socket communication class & functions--------------------
 
 class RS485Wrapper:
-    def __init__(self, serial_port=None, socket_server=None, socket_port=0):
+    def __init__(self, serial_port: Optional[str] = None, socket_server: Optional[str] = None, socket_port: int = 0):
         if socket_server == None:
             self.type = 'serial'
             self.serial_port = serial_port

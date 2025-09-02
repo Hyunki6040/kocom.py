@@ -1,8 +1,8 @@
 ---
 name: Kocom Wallpad with RS485 for 힐스테이트푸르지오수원
-version: 2023.08.013
+version: 2025.01.001
 slug: kocom_py
-description: Kocom Wallpad for Home Assistant
+description: Kocom Wallpad RS485 integration for Home Assistant - Updated for HA 2025.x
 arch:
   - armhf
   - armv7
@@ -13,11 +13,33 @@ url: https://github.com/vifrost/kocom.py
 startup: application
 boot: auto
 uart: true
+host_network: false
+discovery:
+  - mqtt
+services:
+  - mqtt:need
 map:
   - share:rw
+  - config:ro
 options:
-  share/kocom/kocom.conf 설정파일: true
-  share/kocom/kocom.py 실행파일: true
+  mqtt_server: "core-mosquitto"
+  mqtt_port: 1883
+  mqtt_username: ""
+  mqtt_password: ""
+  rs485_type: "serial"
+  serial_port: "/dev/ttyUSB0"
+  socket_server: ""
+  socket_port: 8899
+  debug_mode: false
 schema:
-  share/kocom/kocom.conf 설정파일: bool
-  share/kocom/kocom.py 실행파일: bool
+  mqtt_server: str
+  mqtt_port: "int(1,65535)"
+  mqtt_username: str?
+  mqtt_password: str?
+  rs485_type: list(serial|socket)
+  serial_port: str?
+  socket_server: str?
+  socket_port: "int(1,65535)?"
+  debug_mode: bool
+image: ghcr.io/home-assistant/{arch}-addon-kocom
+init: false

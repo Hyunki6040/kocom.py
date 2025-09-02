@@ -1,0 +1,14 @@
+# Python dependencies for Kocom Wallpad RS485 integration
+# Compatible with Python 3.12 and Home Assistant 2025.8.x
+
+# MQTT client library - latest stable version
+paho-mqtt==2.1.0
+
+# Serial communication for RS485
+pyserial==3.5
+
+# Type hints support (included in Python 3.12 but explicit for compatibility)
+typing-extensions==4.12.2
+
+# Configuration parsing (already in stdlib but ensuring latest)
+configparser==7.1.0
