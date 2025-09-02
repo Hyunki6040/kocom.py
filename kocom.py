@@ -82,7 +82,8 @@ def init_mqttc():
             time.sleep(10)
     return False
 
-def mqtt_on_subscribe(mqttc, obj, mid, granted_qos):
+def mqtt_on_subscribe(mqttc, obj, mid, granted_qos, properties=None):
+    # Updated for paho-mqtt 2.x with properties parameter
     logging.info("[MQTT] Subscribed: " + str(mid) + " " + str(granted_qos))
 
 def mqtt_on_log(mqttc, obj, level, string):
@@ -1012,6 +1013,7 @@ if __name__ == "__main__":
         config.set('Log', 'show_query_hex', str(ha_options.get('debug_mode', False)))
         config.set('Log', 'show_recv_hex', str(ha_options.get('debug_mode', False)))
         config.set('Log', 'show_mqtt_publish', str(ha_options.get('debug_mode', False)))
+        config.set('Log', 'show_mqtt_discovery', str(ha_options.get('debug_mode', False)))
         
         # Set default sections if not present
         if not config.has_section('Device'):
@@ -1028,6 +1030,11 @@ if __name__ == "__main__":
             config.set('User', 'init_temp', str(ha_options.get('init_temp', 23)))
             config.set('User', 'init_fan_mode', 'Medium')
             config.set('User', 'light_count', '3')
+            config.set('User', 'thermo_init_temp', '23')
+            config.set('User', 'ac_init_temp', '21')
+            config.set('User', 'ac_init_mode', 'cool')
+            config.set('User', 'fan_init_fan_mode', 'low')
+            config.set('User', 'ac_init_fan_mode', 'LOW')
         
         logging.info('[CONFIG] RS485 type: {}'.format(config.get('RS485', 'type')))
         if config.get('RS485', 'type') == 'socket':
