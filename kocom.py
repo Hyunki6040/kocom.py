@@ -695,7 +695,7 @@ def publish_discovery(dev, sub=''):
             }
         }
         logtxt='[MQTT Discovery|{}] data[{}]'.format(dev, topic)
-        mqttc.publish(topic, json.dumps(payload))
+        mqttc.publish(topic, json.dumps(payload), retain=True)
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
     elif dev == 'air':
@@ -744,7 +744,7 @@ def publish_discovery(dev, sub=''):
             }
         }
         logtxt='[MQTT Discovery|{}] data[{}]'.format(dev, topic)
-        mqttc.publish(topic, json.dumps(payload))
+        mqttc.publish(topic, json.dumps(payload), retain=True)
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
     elif dev == 'elevator':
@@ -768,7 +768,7 @@ def publish_discovery(dev, sub=''):
             }
         }
         logtxt='[MQTT Discovery|{}] data[{}]'.format(dev, topic)
-        mqttc.publish(topic, json.dumps(payload))
+        mqttc.publish(topic, json.dumps(payload), retain=True)
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
     elif dev == 'light':
@@ -796,7 +796,7 @@ def publish_discovery(dev, sub=''):
                 }
             }
             logtxt='[MQTT Discovery|{}{}] data[{}]'.format(dev, num, topic)
-            mqttc.publish(topic, json.dumps(payload))
+            mqttc.publish(topic, json.dumps(payload), retain=True)
             if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
                 logging.info(logtxt)
     elif dev == 'thermo':
@@ -830,7 +830,7 @@ def publish_discovery(dev, sub=''):
             }
         }
         logtxt='[MQTT Discovery|{}{}] data[{}]'.format(dev, num, topic)
-        mqttc.publish(topic, json.dumps(payload))
+        mqttc.publish(topic, json.dumps(payload), retain=True)
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
     elif dev == 'ac':
@@ -886,7 +886,7 @@ def publish_discovery(dev, sub=''):
             }
         }
         logtxt='[MQTT Discovery|{}] data[{}]'.format(dev, topic)
-        mqttc.publish(topic, json.dumps(payload))
+        mqttc.publish(topic, json.dumps(payload), retain=True)
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
 

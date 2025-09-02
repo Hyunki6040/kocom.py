@@ -1,7 +1,7 @@
 {
   "name": "Kocom Wallpad RS485 for 덕계역금강펜트리움",
   "slug": "kocom_py",
-  "version": "2025.01.014",
+  "version": "2025.01.015",
   "upstream": "https://github.com/Hyunki6040/kocom.py",
   "releases": "https://github.com/Hyunki6040/kocom.py/releases",
   "auto_update": true,
