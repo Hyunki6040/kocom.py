@@ -1,67 +1,246 @@
-# Hass.io Add-on: Kocom Wallpad with RS485 
+# 🏠 Kocom Wallpad RS485 for Home Assistant
 
-![Supports aarch64 Architecture][aarch64-shield] ![Supports amd64 Architecture][amd64-shield] ![Supports armhf Architecture][armhf-shield] ![Supports armv7 Architecture][armv7-shield] ![Supports i386 Architecture][i386-shield]
+[![Version](https://img.shields.io/badge/version-2025.01.009-blue.svg)](https://github.com/Hyunki6040/kocom.py)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.x-brightgreen.svg)](https://www.home-assistant.io/)
+[![Python](https://img.shields.io/badge/Python-3.12-yellow.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Auto-update](https://img.shields.io/badge/auto--update-enabled-success.svg)](AUTO_UPDATE.md)
 
-## About
-Kocom Wallpad with RS485 for 덕계역금강펜트리움
-Maintained by robert
+**덕계역금강펜트리움** 전용 Kocom 월패드 Home Assistant 통합 애드온
 
-## Installation
+> 🚀 **v2025 완전 리뉴얼!** Python 3.12, HA 2025.x 완벽 호환, UI 설정 지원, Auto-update 기능
 
-1. 홈어시스턴트의 Hass.io > ADD-ON STORE에서 Add new repository by URL에 https://github.com/Hyunki6040/kocom.py 를 입력한 다음 ADD 버튼을 누릅니다.
-2. ADD-ON STORE 페이지 하단에서 "Kocom Wallpad with RS485" 클릭합니다.
-3. "INSTALL" 버튼을 누르면 애드온이 설치됩니다. 최대 약 10분 정도 소요. 
-4. INSTALL 버튼위에 설치 애니메이션이 동작하는데 이것이 멈추더라도 REBUILD, START 버튼이 나타나지 않는 경우가 있습니다.
-5. 이 애드온은 이미지를 내려받는 것이 아니라 직접 여러분의 Hassio에서 이미지를 만듭니다.
-6. INSTALL 버튼을 누른다음 설치 애니메이션이 실행되면 제대로 설치중인 것입니다.
-7. share/kocom/ 폴더에 있는 kocom.conf 파일을 본인의 환경에 맞게 수정합니다.
-8. "START" 버튼으로 애드온을 실행합니다.
+---
 
-만일 kocom.py 파일을 수정하시려면 해당 repository를 본인 계정에 fork 후 수정하신 다음에
-애드온을 재 설치 해야 합니다
+## ✨ 주요 기능
 
-## Change log
+### 🎯 핵심 기능
+- ✅ **완전한 UI 설정** - 파일 편집 불필요!
+- ✅ **Auto-update** - 자동 업데이트 지원
+- ✅ **MQTT Discovery** - 자동 엔티티 생성
+- ✅ **실시간 상태 동기화** - 양방향 통신
+- ✅ **자동 재연결** - 연결 끊김 시 자동 복구
 
-(2023-08-03 수정) harwin1 에어컨 소스 반영 ( https://cafe.naver.com/koreassistant/13787 )
+### 📱 지원 장치
+| 장치 | 엔티티 타입 | 기능 |
+|------|------------|------|
+| 🌀 **환기(Fan)** | `fan.*` | 속도 조절 (Low/Medium/High) |
+| 🛗 **엘리베이터** | `switch.*` | 호출 |
+| 💡 **조명** | `light.*` | 각 방 3개씩 개별 제어 |
+| 🌡️ **온도조절기** | `climate.*` | 온도 설정, 켜기/끄기 |
+| ❄️ **에어컨** | `climate.*` | 온도, 모드, 풍량 조절 |
 
-(2022-11-07 수정) bedroom 삭제, room1,2,3으로 변경, kitchen 추가, 환기On/Off 제어 1,2,3단 반영
+### 🔧 연결 방식
+- **Serial (USB RS485)** - USB to RS485 어댑터
+- **Socket (Network)** - Elfin EW11 등 네트워크 RS485 어댑터
 
--------------------------------------------------------------------------------------
+---
 
-(2022-07-24 수정) config.json을 config.yaml로 변환
+## 🚀 빠른 시작 (3분 설치!)
 
-(2022-04-10 수정) MQTT Discovery 지원
+### 1️⃣ 저장소 추가
+**설정** → **애드온** → **애드온 스토어** → **⋮** → **저장소**
 
-(2022-03-30 수정) Home Assistant Supervisor Add-on에서 실행되도록 수정
+```
+https://github.com/Hyunki6040/kocom.py
+```
 
-(2022-03-29 수정) 전열교환기(Fan) 프리셋모드 추가 및 초기모드 사용자 설정, 난방 초기온도 사용자 설정
+### 2️⃣ 애드온 설치
+1. 스토어에서 **"Kocom Wallpad with RS485 for 덕계역금강펜트리움"** 찾기
+2. **INSTALL** 클릭 (5-10분 소요)
 
--------------------------------------------------------------------------------------
+### 3️⃣ 설정 (UI에서!)
+**Configuration** 탭에서:
 
-(2020.9.25 수정) 엘리베이터 도착정보 추가, minor changes
+#### Socket 연결 (Elfin EW11)
+```yaml
+RS485 Type: socket
+Socket Server: 192.168.0.222  # 당신의 EW11 IP
+Socket Port: 8899
+MQTT Allow Anonymous: true
+```
 
-(2019.12.9 수정) github 개설, serial 강제 종료시 error handling
+#### Serial 연결 (USB)
+```yaml
+RS485 Type: serial
+Serial Port: /dev/ttyUSB0
+MQTT Allow Anonymous: true
+```
 
-(2019.11.19 수정) 패킷발송 후 기기상태 수신시까지 다음패킷 발송않도록 처리, 충돌시 random jump, 패킷타이밍 튜닝기능(read_write_gap변수)
+### 4️⃣ 시작
+**START** 버튼 클릭 → 완료! 🎉
 
-(2019.11.18 추가수정) 연결 시작시에도 패킷충돌 감지, fan command오류수정
+---
 
-(2019.11.18 수정) polling 도중 command 발생시 간헐적 충돌 해결
+## 🔄 Auto-update 설정
 
-(2019.11.17 수정) RS485연결 또는 mqtt연결이 끊어졌을 때 예외처리/자동복구, RS485 read/write 패킷충돌 방지
+**Info** 탭 → **Auto update** 토글 ON → 끝!
 
-(2019.11.15 수정) 하나의 파이썬코드 kocom.py로 serial 및 socket 둘 다 지원하도록 바꿨습니다. kocom.conf에서 serial로 할지 socket으로 할지 등등 설정하시면 됩니다. 
+이제 자동으로 업데이트됩니다. [자세히 보기](AUTO_UPDATE.md)
 
-(2019.11.14 수정) Rese님이 지적하신 mqtt log 오류 수정
+---
 
-(2019.11.13오후 수정) Rese님 요청으로, socket용 draft version도 올립니다. (압축파일 내 kocom.py를 대체하세요) serial 연결부분을 socket 연결로 바꾸고, read()-->recv(1), write()-->send()로만 딱 변경했습니다. ser2net python파일로 1분간 작동유무만 테스트하여, 장기적인 안정성은 테스트되지 않았습니다. python 소스코드 내에 소켓 연결할 ip/port 를 기입하도록 되어있으니 수정하셔서 사용하시면 됩니다.
+## 📊 상태 확인
 
-(2019.11.13수정) checksum 을 계산하다보니 아무래도 header는 aa55까지인 것 같습니다. 다시 수정하였습니다. python 소스코드도 수정되었습니다
+### Home Assistant 대시보드
+```yaml
+type: vertical-stack
+cards:
+  - type: entities
+    title: 코콤 월패드
+    entities:
+      - fan.kocom_wallpad_fan
+      - switch.kocom_wallpad_elevator
+      
+  - type: horizontal-stack
+    cards:
+      - type: light
+        entity: light.kocom_livingroom_light1
+        name: 거실
+      - type: light
+        entity: light.kocom_room1_light1
+        name: 방1
+        
+  - type: thermostat
+    entity: climate.kocom_livingroom_thermostat
+    name: 거실 온도
+```
 
-[forum]: https://cafe.naver.com/koreassistant
-[github]: https://github.com/clipman/kocom.py
-[aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
-[amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
-[armhf-shield]: https://img.shields.io/badge/armhf-yes-green.svg
-[armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
-[i386-shield]: https://img.shields.io/badge/i386-yes-green.svg
+### MQTT Explorer
+- Topic: `kocom/#`
+- 실시간 데이터 모니터링
+
+---
+
+## 🔧 문제 해결
+
+### ❌ Socket 연결 실패
+```
+ERROR: Socket connection failure: timed out
+```
+**해결**: 
+- EW11 IP 주소 확인
+- 포트 8899 확인
+- 전원 및 네트워크 케이블 확인
+
+### ❌ MQTT 연결 실패
+```
+Client <unknown> closed its connection
+```
+**해결**: 
+- Configuration에서 `MQTT Allow Anonymous: true` 설정
+- Mosquitto broker 애드온 설치 확인
+
+### ❌ Serial 포트 없음
+```
+ERROR: Serial open failure
+```
+**해결**:
+- USB 케이블 연결 확인
+- `ls /dev/tty*` 명령으로 포트 확인
+- config.yaml에 `uart: true` 확인
+
+> 더 자세한 문제 해결: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+
+---
+
+## 📚 문서
+
+| 문서 | 설명 |
+|-----|------|
+| 📋 [QUICK_INSTALL.md](QUICK_INSTALL.md) | 빠른 설치 가이드 |
+| 🔧 [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | 상세한 문제 해결 |
+| 🔄 [AUTO_UPDATE.md](AUTO_UPDATE.md) | 자동 업데이트 설정 |
+| 📡 [MQTT_SETUP.md](MQTT_SETUP.md) | MQTT 설정 가이드 |
+| 📝 [CHANGELOG.md](CHANGELOG.md) | 변경 내역 |
+
+---
+
+## 🛠️ 기술 사양
+
+### 시스템 요구사항
+- Home Assistant 2025.x 이상
+- Python 3.12 (Alpine Linux)
+- Mosquitto broker 애드온
+
+### RS485 설정
+- Baud rate: 9600
+- Data bits: 8
+- Stop bits: 1
+- Parity: None
+
+### 지원 아키텍처
+- `aarch64` (Raspberry Pi 4/5)
+- `amd64` (Intel/AMD)
+- `armhf` (Raspberry Pi 3)
+- `armv7` (기타 ARM)
+- `i386` (32bit)
+
+---
+
+## 👨‍💻 개발
+
+### 로컬 빌드
+```bash
+# Clone
+git clone https://github.com/Hyunki6040/kocom.py.git
+cd kocom.py
+
+# Build
+docker build -t kocom-wallpad .
+
+# Run
+docker run -v /share:/share kocom-wallpad
+```
+
+### 디버그 모드
+Configuration에서 `Debug Mode: true` 활성화
+
+로그 확인:
+```bash
+docker logs addon_kocom_py
+```
+
+---
+
+## 🤝 기여
+
+버그 리포트 및 기능 제안 환영합니다!
+
+1. Issue 생성: [GitHub Issues](https://github.com/Hyunki6040/kocom.py/issues)
+2. Pull Request 환영
+3. 네이버 카페: [Korea Assistant](https://cafe.naver.com/koreassistant)
+
+---
+
+## 📜 라이선스
+
+MIT License - 자유롭게 사용 및 수정 가능
+
+---
+
+## 🙏 감사의 말
+
+원작자 및 기여자:
+- vifrost (원작자)
+- kyet, 룰루해피, 따분, Susu Daddy, harwin1
+- 그리고 모든 테스터 분들
+
+---
+
+## 📞 연락처
+
+- **관리자**: robert
+- **아파트**: 덕계역금강펜트리움
+- **GitHub**: [Hyunki6040/kocom.py](https://github.com/Hyunki6040/kocom.py)
+- **버전**: 2025.01.009
+
+---
+
+<div align="center">
+  
+**⭐ 도움이 되셨다면 Star를 눌러주세요!**
+
+[![GitHub stars](https://img.shields.io/github/stars/Hyunki6040/kocom.py?style=social)](https://github.com/Hyunki6040/kocom.py)
+
+</div>
