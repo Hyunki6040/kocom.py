@@ -1,6 +1,15 @@
 # 🔧 MQTT 설정 가이드 - Mosquitto 연결 문제 해결
 
 ## ❌ 문제 증상
+
+### 1. Anonymous 연결 거부
+```
+DEBUG: Received CONNACK (0, 5) 
+ERROR: Connection error - Not authorized: Not authorized
+```
+- **Error Code 5**: 브로커가 익명 연결을 허용하지 않음
+
+### 2. 연결 즉시 끊김  
 ```
 New connection from 172.30.32.2:34498 on port 1883.
 Client <unknown> closed its connection.
@@ -9,9 +18,21 @@ Client <unknown> closed its connection.
 
 ## ✅ 해결 방법
 
-### 방법 1: Anonymous 연결 사용 (권장) 🎯
+### 방법 1: Mosquitto 브로커 Anonymous 허용 (권장) 🎯
 
-Home Assistant 애드온 Configuration에서:
+**먼저 Mosquitto Broker 애드온 설정:**
+
+1. **설정 → 애드온 → Mosquitto broker → Configuration**
+2. **다음과 같이 설정:**
+   ```yaml
+   logins: []  # 비워두기
+   anonymous: true  # 반드시 true
+   customize:
+     active: false
+     folder: mosquitto
+   ```
+
+**그 다음 Kocom 애드온 Configuration:**
 ```yaml
 mqtt_allow_anonymous: true
 mqtt_username: ""  # 비워두기
@@ -22,6 +43,8 @@ mqtt_password: ""  # 비워두기
 - 가장 간단하고 안정적
 - Home Assistant 내부 네트워크에서만 작동하므로 안전
 - 인증 충돌 없음
+
+⚠️ **중요**: Mosquitto 브로커에서 `anonymous: true` 설정 필수!
 
 ### 방법 2: 전용 사용자 계정 생성
 

@@ -134,3 +134,4 @@ sed -i 's/paho-mqtt/paho-mqtt==1.5.1/' Dockerfile
 - Socket connections supported for network-based RS485 adapters
 - Elevator TCP/IP mode is experimental and risky - avoid unless necessary
 - Polling interval default is 300 seconds (5 minutes)
+- 매번 changelog와 readme를 관리해. changelog는 오늘 날짜를 확인해서 major 업데이트만 기록해. 단순 버그 픽스들은 기록할 필요 없어.
