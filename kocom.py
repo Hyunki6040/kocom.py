@@ -5,7 +5,9 @@
  Kocom Wallpad RS485 Integration for Home Assistant
  Updated for Python 3.12 and HA 2025.x compatibility
  
- Forked from script written by vifrost, kyet, 룰루해피, 따분, Susu Daddy, harwin1
+ For 덕계역금강펜트리움
+ Maintained by robert
+ Based on work by vifrost, kyet, 룰루해피, 따분, Susu Daddy, harwin1
 '''
 
 import os
@@ -26,7 +28,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # define -------------------------------
-SW_VERSION = '2025.01.001'
+SW_VERSION = '2025.01.004'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 

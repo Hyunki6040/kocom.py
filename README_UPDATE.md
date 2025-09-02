@@ -1,4 +1,6 @@
-# 🚀 Kocom Wallpad RS485 - Home Assistant 2025.x 업데이트 완료
+# 🚀 Kocom Wallpad RS485 for 덕계역금강펜트리움 - Home Assistant 2025.x 업데이트 완료
+
+**Maintained by robert**
 
 ## 📋 주요 변경사항
 
@@ -25,15 +27,9 @@
 
 ### 방법 1: Fork 후 개인 저장소 사용 (권장)
 
-1. **이 저장소를 Fork**
-   ```bash
-   # GitHub에서 Fork 버튼 클릭 또는
-   gh repo fork https://github.com/vifrost/kocom.py --clone
-   ```
-
-2. **Home Assistant에 저장소 추가**
+1. **Home Assistant에 저장소 추가**
    - 설정 → 애드온 → 애드온 스토어 → ⋮ → 저장소
-   - 추가: `https://github.com/YOUR_USERNAME/kocom.py`
+   - 추가: `https://github.com/Hyunki6040/kocom.py`
 
 3. **애드온 설치**
    - 스토어에서 "Kocom Wallpad with RS485" 찾기
@@ -108,7 +104,9 @@ enabled = light_livingroom, light_room1, thermo_livingroom, fan
 
 ---
 
-**버전**: 2025.01.001  
+**버전**: 2025.01.004  
 **호환성**: Home Assistant 2025.8.x 이상  
 **Python**: 3.12 (Alpine Linux)  
+**작성자**: robert  
+**아파트**: 덕계역금강펜트리움  
 **업데이트 날짜**: 2025-01-02

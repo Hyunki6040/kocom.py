@@ -1,5 +1,5 @@
 {
-	"name": "Home Assistant Add-on: Kocom",
-	"url": "https://github.com/vifrost/kocom.py",
-	"maintainer": "vifrost <vifrost@nate.com>"
+	"name": "Home Assistant Add-on: Kocom for 덕계역금강펜트리움",
+	"url": "https://github.com/Hyunki6040/kocom.py",
+	"maintainer": "robert <robert@gmail.com>"
 }
