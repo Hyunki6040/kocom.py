@@ -1,6 +1,6 @@
 ---
 name: Kocom Wallpad with RS485 for 덕계역금강펜트리움
-version: 2025.01.007
+version: 2025.01.008
 slug: kocom_py
 description: Kocom Wallpad RS485 integration for Home Assistant - Updated for HA 2025.x by robert
 arch:
@@ -28,9 +28,9 @@ options:
   serial_port: "/dev/ttyUSB0"
   mqtt_server: "core-mosquitto"
   mqtt_port: 1883
-  mqtt_username: "homeassistant"
+  mqtt_username: ""
   mqtt_password: ""
-  mqtt_allow_anonymous: false
+  mqtt_allow_anonymous: true
   elevator_floor: 15
   init_temp: 23
   debug_mode: false

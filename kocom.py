@@ -57,29 +57,55 @@ room_h_dic = {'livingroom':'00', 'myhome':'00', 'room1':'01', 'room2':'02', 'roo
 
 def init_mqttc():
     # Updated for paho-mqtt 2.x compatibility
-    mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    # Generate unique client ID to avoid conflicts
+    import random
+    import string
+    client_id = 'kocom_' + ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    
+    mqttc = mqtt.Client(
+        callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+        client_id=client_id,
+        clean_session=True,
+        protocol=mqtt.MQTTv311
+    )
+    
     mqttc.on_message = mqtt_on_message
     mqttc.on_subscribe = mqtt_on_subscribe
     mqttc.on_connect = mqtt_on_connect
     mqttc.on_disconnect = mqtt_on_disconnect
+    
+    # Enable debug logging for MQTT
+    if config.get('Log', 'show_mqtt_publish', fallback='False') == 'True':
+        mqttc.enable_logger()
 
-    if config.get('MQTT','mqtt_allow_anonymous') != 'True':
-        logtxt = "[MQTT] connecting (using username and password)"
-        mqttc.username_pw_set(username=config.get('MQTT','mqtt_username',fallback=''), password=config.get('MQTT','mqtt_password',fallback=''))
+    mqtt_username = config.get('MQTT','mqtt_username', fallback='')
+    mqtt_password = config.get('MQTT','mqtt_password', fallback='')
+    
+    if config.get('MQTT','mqtt_allow_anonymous') != 'True' and mqtt_username:
+        logtxt = f"[MQTT] connecting with username: {mqtt_username}"
+        mqttc.username_pw_set(username=mqtt_username, password=mqtt_password)
     else:
         logtxt = "[MQTT] connecting (anonymous)"
 
     mqtt_server = config.get('MQTT','mqtt_server')
     mqtt_port = int(config.get('MQTT','mqtt_port'))
+    
+    # Set keepalive and other connection parameters
+    mqttc.reconnect_delay_set(min_delay=1, max_delay=120)
     for retry_cnt in range(1,31):
         try:
-            logging.info(logtxt)
-            mqttc.connect(mqtt_server, mqtt_port, 60)
+            logging.info(f"{logtxt} to {mqtt_server}:{mqtt_port}")
+            mqttc.connect(mqtt_server, mqtt_port, keepalive=60)
             mqttc.loop_start()
+            # Wait a bit to ensure connection is established
+            time.sleep(0.5)
             return mqttc
-        except:
-            logging.error('[MQTT] connection failure. #' + str(retry_cnt))
-            time.sleep(10)
+        except Exception as e:
+            logging.error(f'[MQTT] connection failure #{retry_cnt}: {str(e)}')
+            if retry_cnt < 30:
+                wait_time = min(retry_cnt * 2, 30)  # Exponential backoff
+                logging.info(f'[MQTT] Retrying in {wait_time} seconds...')
+                time.sleep(wait_time)
     return False
 
 def mqtt_on_subscribe(mqttc, obj, mid, granted_qos, properties=None):
