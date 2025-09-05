@@ -201,13 +201,100 @@ class PairedPacketCapture:
             print(f"  ON : {final_on}")
             print(f"  OFF: {final_off}")
             
-            self.captured_devices[device_name] = {
-                'ON': final_on,
-                'OFF': final_off,
-                'captured_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
-            self.save_devices()
-            return True
+            # Test the captured packets
+            print("\n" + "-"*70)
+            print("🧪 캡처한 패킷 테스트")
+            test = input("캡처한 패킷을 테스트하시겠습니까? (y/n): ").strip().lower()
+            
+            if test == 'y':
+                print("\n테스트 순서: ON (3초 대기) → OFF (3초 대기) → ON → OFF")
+                input("준비되면 Enter를 누르세요...")
+                
+                try:
+                    # Test ON
+                    print("📡 ON 패킷 전송...")
+                    hex_bytes = bytes.fromhex(final_on.replace(' ', ''))
+                    self.sock.send(hex_bytes)
+                    print(f"   → 전송됨: {final_on[:30]}...")
+                    
+                    time.sleep(3)
+                    
+                    # Test OFF
+                    print("📡 OFF 패킷 전송...")
+                    hex_bytes = bytes.fromhex(final_off.replace(' ', ''))
+                    self.sock.send(hex_bytes)
+                    print(f"   → 전송됨: {final_off[:30]}...")
+                    
+                    time.sleep(3)
+                    
+                    # Test ON again
+                    print("📡 ON 패킷 재전송...")
+                    hex_bytes = bytes.fromhex(final_on.replace(' ', ''))
+                    self.sock.send(hex_bytes)
+                    print(f"   → 전송됨: {final_on[:30]}...")
+                    
+                    time.sleep(3)
+                    
+                    # Test OFF again
+                    print("📡 OFF 패킷 재전송...")
+                    hex_bytes = bytes.fromhex(final_off.replace(' ', ''))
+                    self.sock.send(hex_bytes)
+                    print(f"   → 전송됨: {final_off[:30]}...")
+                    
+                    print("\n✅ 테스트 완료!")
+                    
+                    # Ask if it worked
+                    worked = input("\n장치가 정상적으로 작동했습니까? (y/n): ").strip().lower()
+                    
+                    if worked == 'y':
+                        print("🎉 완벽! 패킷이 정상 작동합니다.")
+                        self.captured_devices[device_name] = {
+                            'ON': final_on,
+                            'OFF': final_off,
+                            'captured_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                            'tested': True
+                        }
+                        self.save_devices()
+                        return True
+                    else:
+                        print("⚠️  패킷이 작동하지 않습니다.")
+                        retry = input("다시 캡처하시겠습니까? (y/n): ").strip().lower()
+                        if retry == 'y':
+                            return self.capture_on_off_pair(device_name)
+                        else:
+                            # Save anyway but mark as not tested
+                            save_anyway = input("테스트는 실패했지만 저장하시겠습니까? (y/n): ").strip().lower()
+                            if save_anyway == 'y':
+                                self.captured_devices[device_name] = {
+                                    'ON': final_on,
+                                    'OFF': final_off,
+                                    'captured_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                    'tested': False
+                                }
+                                self.save_devices()
+                                return True
+                            return False
+                        
+                except Exception as e:
+                    print(f"❌ 테스트 중 오류: {e}")
+                    self.captured_devices[device_name] = {
+                        'ON': final_on,
+                        'OFF': final_off,
+                        'captured_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'tested': False
+                    }
+                    self.save_devices()
+                    return True
+            else:
+                # Save without testing
+                self.captured_devices[device_name] = {
+                    'ON': final_on,
+                    'OFF': final_off,
+                    'captured_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'tested': False
+                }
+                self.save_devices()
+                return True
         else:
             print(f"\n⚠️ 패킷 캡처 불완전:")
             if not final_on:
@@ -262,11 +349,14 @@ class PairedPacketCapture:
         print("📋 캡처된 장치 목록")
         print("="*70)
         for i, (name, data) in enumerate(self.captured_devices.items(), 1):
-            print(f"\n{i:2}. {name}")
-            print(f"    ON : {data['ON']}")
-            print(f"    OFF: {data['OFF']}")
+            tested_mark = "✅" if data.get('tested', False) else "⚠️"
+            print(f"\n{i:2}. {name} {tested_mark}")
+            print(f"    ON : {data['ON'][:40]}...")
+            print(f"    OFF: {data['OFF'][:40]}...")
             if 'captured_at' in data:
                 print(f"    캡처시간: {data['captured_at']}")
+            if 'tested' in data:
+                print(f"    테스트: {'완료' if data['tested'] else '미완료'}")
     
     def quick_capture_mode(self, device_type):
         """Quick capture for multiple devices"""
