@@ -84,83 +84,106 @@ class PairedPacketCapture:
         print(f"🎯 장치: {device_name}")
         print("="*70)
         
-        print(f"\n📌 '{device_name}' 캡처 순서: ON → OFF → ON → OFF")
-        print("각 단계에서 안내에 따라 버튼을 1번만 누르세요.\n")
+        print(f"\n📌 '{device_name}' 캡처 순서:")
+        print("1️⃣ ON 버튼 → 2️⃣ OFF 버튼 → 3️⃣ ON 버튼 → 4️⃣ OFF 버튼")
+        print("한 번의 캡처 세션에서 4번의 동작을 연속으로 수행합니다.\n")
         
         results = {
             'ON': [],
             'OFF': []
         }
         
-        # Step 1: Baseline
-        print("[준비] 기준선 캡처 - 아무 버튼도 누르지 마세요")
-        input("준비되면 Enter... ")
-        print("⏱️  캡처 중... (5초)")
-        baseline = self.collect_packets(5)
-        print(f"✅ 기준선: {len(baseline)}개 패킷\n")
+        # Step 1: Baseline (before any action)
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("📍 [준비 단계] 기준선 측정")
+        print("아무 버튼도 누르지 마시고 기다려주세요.")
+        input("\n준비되면 Enter를 누르세요... ")
+        print("⏱️  기준선 캡처 중... (5초)")
+        baseline_before = self.collect_packets(5)
+        print(f"✅ 기준선: {len(baseline_before)}개 패킷")
         
         time.sleep(2)
         
-        # Step 2: First ON
-        print("[1/4] 첫 번째 ON - 버튼을 눌러 켜세요")
-        input("준비되면 Enter... ")
-        print("⏱️  캡처 중... (5초 내에 ON 버튼)")
-        on1_packets = self.collect_packets(5)
-        on1_new = self.find_new_packets(baseline, on1_packets)
+        # Step 2: Capture all 4 actions in sequence
+        print("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("📍 [캡처 단계] 연속 동작 캡처")
+        print("\n이제 다음 순서로 버튼을 누르세요:")
+        print("  1️⃣ ON  (3초 대기)")
+        print("  2️⃣ OFF (3초 대기)")
+        print("  3️⃣ ON  (3초 대기)")
+        print("  4️⃣ OFF")
+        print("\n각 동작 후 다음 안내가 나올 때까지 기다려주세요.")
+        input("\n준비되면 Enter를 누르세요... ")
+        
+        # Capture sequence
+        all_packets = []
+        
+        # Action 1: ON
+        print("\n[1️⃣/4] ON - 지금 켜세요!")
+        start_time = time.time()
+        while time.time() - start_time < 5:
+            packets = self.collect_packets(0.5)
+            all_packets.extend([(p, 'ON1', time.time()) for p in packets])
+        on1_new = self.find_new_packets(baseline_before, [p[0] for p in all_packets])
         if on1_new:
-            print(f"✅ ON 패킷 후보: {len(on1_new)}개 발견")
+            print(f"   ✅ {len(on1_new)}개 새 패킷 감지")
             results['ON'].extend(on1_new)
-        else:
-            print("⚠️  새 패킷 없음")
         
+        print("   ⏸️  3초 대기...")
         time.sleep(3)
         
-        # Step 3: First OFF
-        print("\n[2/4] 첫 번째 OFF - 버튼을 눌러 끄세요")
-        input("준비되면 Enter... ")
-        print("⏱️  캡처 중... (5초 내에 OFF 버튼)")
-        
-        # Get new baseline (with light ON)
+        # Get new baseline with device ON
         baseline_on = self.collect_packets(2)
-        off1_packets = self.collect_packets(5)
-        off1_new = self.find_new_packets(baseline_on, off1_packets)
+        
+        # Action 2: OFF
+        print("\n[2️⃣/4] OFF - 지금 끄세요!")
+        packets_before_off = len(all_packets)
+        start_time = time.time()
+        while time.time() - start_time < 5:
+            packets = self.collect_packets(0.5)
+            all_packets.extend([(p, 'OFF1', time.time()) for p in packets])
+        off1_new = self.find_new_packets(baseline_on, [p[0] for p in all_packets[packets_before_off:]])
         if off1_new:
-            print(f"✅ OFF 패킷 후보: {len(off1_new)}개 발견")
+            print(f"   ✅ {len(off1_new)}개 새 패킷 감지")
             results['OFF'].extend(off1_new)
-        else:
-            print("⚠️  새 패킷 없음")
         
+        print("   ⏸️  3초 대기...")
         time.sleep(3)
         
-        # Step 4: Second ON (verification)
-        print("\n[3/4] 두 번째 ON - 다시 켜세요 (검증)")
-        input("준비되면 Enter... ")
-        print("⏱️  캡처 중... (5초 내에 ON 버튼)")
-        
+        # Get new baseline with device OFF
         baseline_off = self.collect_packets(2)
-        on2_packets = self.collect_packets(5)
-        on2_new = self.find_new_packets(baseline_off, on2_packets)
-        if on2_new:
-            print(f"✅ ON 패킷 후보: {len(on2_new)}개 발견")
-            results['ON'].extend(on2_new)
-        else:
-            print("⚠️  새 패킷 없음")
         
+        # Action 3: ON (verification)
+        print("\n[3️⃣/4] ON - 다시 켜세요! (검증)")
+        packets_before_on2 = len(all_packets)
+        start_time = time.time()
+        while time.time() - start_time < 5:
+            packets = self.collect_packets(0.5)
+            all_packets.extend([(p, 'ON2', time.time()) for p in packets])
+        on2_new = self.find_new_packets(baseline_off, [p[0] for p in all_packets[packets_before_on2:]])
+        if on2_new:
+            print(f"   ✅ {len(on2_new)}개 새 패킷 감지")
+            results['ON'].extend(on2_new)
+        
+        print("   ⏸️  3초 대기...")
         time.sleep(3)
         
-        # Step 5: Second OFF (verification)
-        print("\n[4/4] 두 번째 OFF - 다시 끄세요 (검증)")
-        input("준비되면 Enter... ")
-        print("⏱️  캡처 중... (5초 내에 OFF 버튼)")
-        
+        # Get new baseline with device ON again
         baseline_on2 = self.collect_packets(2)
-        off2_packets = self.collect_packets(5)
-        off2_new = self.find_new_packets(baseline_on2, off2_packets)
+        
+        # Action 4: OFF (verification)
+        print("\n[4️⃣/4] OFF - 다시 끄세요! (검증)")
+        packets_before_off2 = len(all_packets)
+        start_time = time.time()
+        while time.time() - start_time < 5:
+            packets = self.collect_packets(0.5)
+            all_packets.extend([(p, 'OFF2', time.time()) for p in packets])
+        off2_new = self.find_new_packets(baseline_on2, [p[0] for p in all_packets[packets_before_off2:]])
         if off2_new:
-            print(f"✅ OFF 패킷 후보: {len(off2_new)}개 발견")
+            print(f"   ✅ {len(off2_new)}개 새 패킷 감지")
             results['OFF'].extend(off2_new)
-        else:
-            print("⚠️  새 패킷 없음")
+        
+        print("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         
         # Analyze results
         print("\n" + "-"*70)
