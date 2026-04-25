@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2025.01.016] - 2025-04-25
+
+### ✨ Added
+- **Custom light controller address** - `light_controller` config option for apartments with non-standard controller addresses (e.g., 덕계역금강펜트리움 uses 5400 instead of standard 0100)
+
+### 📝 Changed
+- Light control commands now use configurable controller address as source
+- Light queries also use the configured controller address for compatibility
+
+---
+
 ## [2025.01.010] - 2025-01-02
 
 ### 🐛 Fixed

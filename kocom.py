@@ -28,7 +28,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # define -------------------------------
-SW_VERSION = '2025.01.004'
+SW_VERSION = '2025.01.016'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 
@@ -389,6 +389,9 @@ def query(device_h, publish=False, enforce=False):
         log = 'query ' + device_t_dic.get(device_h[:2]) + str(int(device_h[2:4],16))
     else:
         log = None
+    # Use light_controller_addr for light devices (some apartments use non-standard controller)
+    if device_h[:2] == device_h_dic['light']:
+        return send_wait_response(dest=device_h, src=light_controller_addr, cmd=cmd_h_dic['query'], log=log, publish=publish)
     return send_wait_response(dest=device_h, cmd=cmd_h_dic['query'], log=log, publish=publish)
 
 
@@ -531,10 +534,10 @@ def mqtt_on_message(mqttc, obj, msg):
             while light_id > 0:
                 n = light_id % 10
                 value = value[:n*2-2] + onoff_hex + value[n*2:]
-                send_wait_response(dest=dev_id, value=value, log='light')
+                send_wait_response(dest=dev_id, src=light_controller_addr, value=value, log='light')
                 light_id = int(light_id/10)
         else:
-            send_wait_response(dest=dev_id, value=value, log='light')
+            send_wait_response(dest=dev_id, src=light_controller_addr, value=value, log='light')
 
     # gas off : kocom/livingroom/gas/command
     elif 'gas' in topic_d:
@@ -1012,6 +1015,10 @@ def listen_hexdata():
 #========== Main ==========
 
 if __name__ == "__main__":
+    # Global variables that will be configured
+    global light_controller_addr
+    light_controller_addr = None
+
     logging.basicConfig(format='%(levelname)s[%(asctime)s]:%(message)s ', level=logging.DEBUG)
 
     # Try to read Home Assistant addon options first
@@ -1078,6 +1085,14 @@ if __name__ == "__main__":
     else:
         # Fallback to reading kocom.conf file
         config.read(CONFIG_FILE)
+
+    # Load light controller address (for apartments with non-standard controller)
+    try:
+        light_controller_addr = config.get('Device', 'light_controller')
+        logging.info('[CONFIG] Using custom light controller address: {}'.format(light_controller_addr))
+    except:
+        light_controller_addr = device_h_dic['wallpad'] + '00'  # default: 0100
+        logging.info('[CONFIG] Using default light controller address: {}'.format(light_controller_addr))
 
     # Connection retry configuration
     MAX_RETRIES = 10
