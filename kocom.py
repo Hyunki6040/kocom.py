@@ -28,7 +28,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # define -------------------------------
-SW_VERSION = '2026.04.001'
+SW_VERSION = '2026.04.002'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 
@@ -937,7 +937,7 @@ def poll_state(enforce=False):
     poll_timer.cancel()
 
     dev_list = [x.strip() for x in config.get('Device','enabled').split(',')]
-    no_polling_list = ['wallpad', 'elevator']
+    no_polling_list = ['wallpad', 'elevator', 'light']  # light 폴링 시 일괄소등 트리거됨
 
     #thread health check
     for thread_instance in thread_list:

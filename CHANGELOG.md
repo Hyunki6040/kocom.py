@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.04.002] - 2026-04-30
+
+### 🐛 Fixed
+- **Disable light polling** - 조명 상태 조회(poll_state)가 일괄소등을 트리거하는 문제 해결
+- `no_polling_list`에 'light' 추가하여 조명 폴링 비활성화
+
+---
+
 ## [2026.04.001] - 2026-04-30
 
 ### ✨ Added
