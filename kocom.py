@@ -28,7 +28,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # define -------------------------------
-SW_VERSION = '2025.01.017'
+SW_VERSION = '2026.04.001'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 

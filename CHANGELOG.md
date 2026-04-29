@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2025.01.017] - 2025-04-30
+## [2026.04.001] - 2026-04-30
 
 ### ✨ Added
 - **Room mapping for 덕계역금강펜트리움** - Updated room codes with Korean names (거실, 안방, 작업실, 손님방)
