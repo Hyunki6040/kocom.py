@@ -91,20 +91,35 @@ cards:
     entities:
       - fan.kocom_wallpad_fan
       - switch.kocom_wallpad_elevator
-      
+
   - type: horizontal-stack
     cards:
       - type: light
         entity: light.kocom_livingroom_light1
         name: 거실
       - type: light
-        entity: light.kocom_room1_light1
-        name: 방1
-        
+        entity: light.kocom_master_light1
+        name: 안방
+      - type: light
+        entity: light.kocom_office_light1
+        name: 작업실
+      - type: light
+        entity: light.kocom_guest_light1
+        name: 손님방
+
   - type: thermostat
     entity: climate.kocom_livingroom_thermostat
     name: 거실 온도
 ```
+
+### 방 매핑 (덕계역금강펜트리움)
+| 코드 | 영문 | 한글 |
+|------|------|------|
+| 00 | livingroom | 거실 |
+| 01 | master | 안방 |
+| 02 | office | 작업실 |
+| 03 | guest | 손님방 |
+| 04 | kitchen | 주방 (미지원) |
 
 ### MQTT Explorer
 - Topic: `kocom/#`
@@ -152,6 +167,7 @@ ERROR: Serial open failure
 | 🔧 [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | 상세한 문제 해결 |
 | 🔄 [AUTO_UPDATE.md](AUTO_UPDATE.md) | 자동 업데이트 설정 |
 | 📡 [MQTT_SETUP.md](MQTT_SETUP.md) | MQTT 설정 가이드 |
+| 🌐 [EW11_STATUS.md](EW11_STATUS.md) | EW11 현재 네트워크/시스템 상태 메모 |
 | 📝 [CHANGELOG.md](CHANGELOG.md) | 변경 내역 |
 
 ---

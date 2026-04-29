@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2025.01.017] - 2025-04-30
+
+### ✨ Added
+- **Room mapping for 덕계역금강펜트리움** - Updated room codes with Korean names (거실, 안방, 작업실, 손님방)
+- **Batch switch protocol** - Documented `309c` packet type for 일괄소등 (cmd 65/66)
+- **Device code 54** - Added batch switch device type
+
+### 📝 Changed
+- `room_t_dic` now uses descriptive names: livingroom, master, office, guest
+- `room_h_dic` supports Korean room names (거실, 안방, 작업실, 손님방)
+- `cmd_t_dic` includes batch_on (65) and batch_off (66) commands
+
+---
+
 ## [2025.01.016] - 2025-04-25
 
 ### ✨ Added

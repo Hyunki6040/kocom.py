@@ -130,6 +130,48 @@ v2025.01.002부터 자동 재시도 기능이 추가되었습니다:
 2. **자동 재시작**: 연결 실패 시 60초 후 재시작
 3. **상세한 오류 메시지**: 문제 진단을 위한 구체적인 안내
 
+## 🔦 일괄소등 (Batch Switch) 문제 해결
+
+### 증상
+조명을 켜면 자동으로 일괄소등이 활성화되어 모든 조명이 꺼지는 현상
+
+### 원인 분석
+- 조명 제어 패킷(30bc 타입) 전송 시 월패드가 자동으로 일괄소등 모드를 활성화
+- 일괄소등은 특수 패킷 타입(309c)을 사용하며 일반 조명 패킷과 다름
+
+### 해결책: 연속 일괄소등 해제
+조명 명령 후 5초간 일괄소등 OFF 패킷을 연속 전송하여 해제 상태 유지
+
+**패킷 구조:**
+```
+일괄소등 ON:  aa55309c000eff01006500000000000000003f0d0d
+일괄소등 OFF: aa55309c000eff010066ffffffffffffffff380d0d
+```
+
+**kocom.py 적용 방식:**
+```python
+BATCH_OFF_PACKET = 'aa55309c000eff010066ffffffffffffffff380d0d'
+
+def send_batch_off_continuous(duration=5):
+    """일괄소등 OFF 패킷을 연속으로 전송"""
+    end_time = time.time() + duration
+    count = 0
+    while time.time() < end_time:
+        rs485.write(bytearray.fromhex(BATCH_OFF_PACKET))
+        count += 1
+        time.sleep(0.3)
+    logging.info('[BATCH_OFF] Sent {} times'.format(count))
+```
+
+### 디버깅 과정에서 배운 것
+
+1. **단일 전송은 효과 없음**: 일괄소등 OFF를 한 번만 보내면 월패드가 다시 ON으로 전환
+2. **타이밍 중요**: 0.3초 간격으로 5초간 연속 전송 (약 17회)이 안정적
+3. **패킷 타입 구분**:
+   - `30bc/30bd/30be`: 일반 조명 send/ack 패킷
+   - `309c`: 일괄소등 전용 패킷 (특수 타입)
+4. **src 주소**: 일괄소등 패킷은 `0100` (wallpad) 또는 `5400` 사용
+
 ## 💡 추가 팁
 
 1. **RS485 어댑터 설정**

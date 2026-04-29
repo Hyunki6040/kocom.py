@@ -28,7 +28,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # define -------------------------------
-SW_VERSION = '2025.01.016'
+SW_VERSION = '2025.01.017'
 CONFIG_FILE = 'kocom.conf'
 BUF_SIZE = 100
 
@@ -43,15 +43,23 @@ chksum_position = 18  # 18th byte
 type_t_dic = {'30b':'send', '30d':'ack'}
 seq_t_dic = {'c':1, 'd':2, 'e':3, 'f':4}
 # device_t_dic = {'01':'wallpad', '0e':'light', '2c':'gas', '36':'thermo', '3b': 'plug', '44':'elevator', '48':'fan'}  # 2023.08 AC, AIR 추가
-device_t_dic = {'01': 'wallpad', '0e': 'light', '2c': 'gas', '36': 'thermo', '39': 'ac', '3b': 'plug', '44': 'elevator', '48': 'fan', '98': 'air'}
-cmd_t_dic = {'00':'state', '01':'on', '02':'off', '3a':'query'}
-room_t_dic = {'00':'livingroom', '01':'room1', '02':'room2', '03':'room3', '04':'kitchen'}
+device_t_dic = {'01': 'wallpad', '0e': 'light', '2c': 'gas', '36': 'thermo', '39': 'ac', '3b': 'plug', '44': 'elevator', '48': 'fan', '54': 'batch', '98': 'air'}
+cmd_t_dic = {'00':'state', '01':'on', '02':'off', '3a':'query', '65':'batch_on', '66':'batch_off'}
+# 덕계역금강펜트리움 room mapping: 00=거실, 01=안방, 02=작업실, 03=손님방, 04=주방(미지원)
+room_t_dic = {'00':'livingroom', '01':'master', '02':'office', '03':'guest', '04':'kitchen'}
 
 type_h_dic = {v: k for k, v in type_t_dic.items()}
 seq_h_dic = {v: k for k, v in seq_t_dic.items()}
 device_h_dic = {v: k for k, v in device_t_dic.items()}
 cmd_h_dic = {v: k for k, v in cmd_t_dic.items()}
-room_h_dic = {'livingroom':'00', 'myhome':'00', 'room1':'01', 'room2':'02', 'room3':'03', 'kitchen':'04'}
+# 덕계역금강펜트리움: 거실=00, 안방=01, 작업실=02, 손님방=03
+room_h_dic = {
+    'livingroom':'00', 'myhome':'00', '거실':'00',
+    'master':'01', 'room1':'01', '안방':'01',
+    'office':'02', 'room2':'02', '작업실':'02',
+    'guest':'03', 'room3':'03', '손님방':'03',
+    'kitchen':'04', '주방':'04'
+}
 
 # mqtt functions ----------------------------
 
@@ -297,6 +305,30 @@ def chksum(data_h):
     return '{0:02x}'.format((sum_buf)%256)  # return chksum hex value in text format
 
 
+# 일괄소등 OFF 패킷 (덕계역금강펜트리움)
+# 조명 제어 후 일괄소등이 자동으로 켜지는 문제 해결
+# 309c 타입, dest=0eff(전체조명), cmd=66(batch_off), value=ff(전체ON)
+BATCH_OFF_PACKET = 'aa55309c000eff010066ffffffffffffffff380d0d'
+
+def send_batch_off_continuous(duration=5):
+    """일괄소등 OFF 패킷을 연속으로 전송하여 일괄소등 해제 유지
+
+    Args:
+        duration: 전송 지속 시간 (초), 기본 5초
+    """
+    try:
+        end_time = time.time() + duration
+        count = 0
+        while time.time() < end_time:
+            if rs485.write(bytearray.fromhex(BATCH_OFF_PACKET)) == False:
+                break
+            count += 1
+            time.sleep(0.3)
+        logging.info('[BATCH_OFF] Sent {} times'.format(count))
+    except Exception as ex:
+        logging.error('[BATCH_OFF] Error: {}'.format(ex))
+
+
 # hex parsing --------------------------------
 
 def parse(hex_data):
@@ -538,6 +570,10 @@ def mqtt_on_message(mqttc, obj, msg):
                 light_id = int(light_id/10)
         else:
             send_wait_response(dest=dev_id, src=light_controller_addr, value=value, log='light')
+
+        # 덕계역금강펜트리움: 조명 제어 후 일괄소등 자동 활성화 방지
+        # 309c 패킷을 5초간 연속 전송하여 일괄소등 해제 유지
+        send_batch_off_continuous(duration=5)
 
     # gas off : kocom/livingroom/gas/command
     elif 'gas' in topic_d:
