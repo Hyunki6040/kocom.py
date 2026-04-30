@@ -37,10 +37,15 @@ class LightTester:
         self.rooms = self.packet_config['rooms']
         self.room_aliases = self.packet_config['room_aliases']
 
+        # Protocol configurations
+        self.packet_types = self.protocol_config['packet_types']
+        self.sequence_codes = self.protocol_config['sequence_codes']
+
         # Create reverse mappings (name → code)
         self.device_names = {v: k for k, v in self.device_codes.items()}
         self.cmd_names = {v: k for k, v in self.cmd_codes.items()}
         self.room_names = {v: k for k, v in self.rooms.items()}
+        self.type_codes = {v: k for k, v in self.packet_types.items()}
 
         self.header = self.protocol_config['packet_structure']['header']
         self.trailer = self.protocol_config['packet_structure']['trailer']
@@ -77,10 +82,11 @@ class LightTester:
 
     def send_packet(self, dest, src, cmd, value):
         """Send RS485 packet"""
-        type_h = '30bc'  # send packet type
-        seq_h = 'c'  # first sequence
-        monitor_h = '00'  # wallpad
+        type_h = self.type_codes['send']  # '30b' (3 chars, not '30bc')
+        seq_h = 'c'  # first sequence (1 char)
+        monitor_h = '00'  # wallpad (2 chars)
 
+        # Total: 3 + 1 + 2 + 4 + 4 + 2 + 16 = 32 chars (even number for hex)
         data_h = type_h + seq_h + monitor_h + dest + src + cmd + value
         chksum_h = self.chksum(data_h)
         packet_h = self.header + data_h + chksum_h + self.trailer
