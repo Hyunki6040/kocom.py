@@ -29,7 +29,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # Version and constants -------------------------------
-SW_VERSION = '2026.05.004'
+SW_VERSION = '2026.05.006'
 CONFIG_FILE = 'kocom.conf'
 PACKETS_FILE = 'packets.json'
 PROTOCOL_FILE = 'protocol.json'
@@ -515,7 +515,13 @@ def query(device_h, publish=False, enforce=False):
     return send_wait_response(dest=device_h, cmd=cmd_h_dic['query'], log=log, publish=publish)
 
 
-def send_wait_response(dest, src=device_h_dic['wallpad']+'00', cmd=cmd_h_dic['state'], value='0'*16, log=None, check_ack=True, publish=True):
+def send_wait_response(dest, src=None, cmd=None, value='0'*16, log=None, check_ack=True, publish=True):
+    # Set default values (cannot use dict lookup in function signature as it's evaluated at module load time)
+    if src is None:
+        src = device_h_dic['wallpad'] + '00'
+    if cmd is None:
+        cmd = cmd_h_dic['state']
+
     #logging.debug('waiting for send_wait_response :'+dest)
     wait_target.put(dest)
     #logging.debug('entered send_wait_response :'+dest)

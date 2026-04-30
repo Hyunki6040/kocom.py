@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2026.05.006] - 2026-05-01
 
+### 🐛 Fixed
+- **Critical startup error** - Fixed KeyError on `device_h_dic['wallpad']` at module load time
+  - Changed `send_wait_response()` function signature to use `None` defaults
+  - Default values now evaluated at function call time, not module load time
+  - Prevents crash when JSON config not yet loaded
+
 ### 🌐 Localization Update
 - **English entity names** - All Home Assistant friendly_name fields now display in English
   - Fan (환풍기)
