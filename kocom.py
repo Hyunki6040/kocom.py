@@ -29,7 +29,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # Version and constants -------------------------------
-SW_VERSION = '2026.04.004'
+SW_VERSION = '2026.04.005'
 CONFIG_FILE = 'kocom.conf'
 PACKETS_FILE = 'packets.json'
 PROTOCOL_FILE = 'protocol.json'
@@ -371,16 +371,25 @@ def send_batch_off_continuous(duration=None):
         interval = batch_config['interval']
         packet_hex = batch_config['hex']
 
+        logging.info(f'[BATCH_DEBUG] Starting continuous batch_off transmission - Duration: {duration}s, Interval: {interval}s')
+        logging.info(f'[BATCH_DEBUG] Batch_off packet: {packet_hex}')
+
         end_time = time.time() + duration
         count = 0
+        failed_count = 0
         while time.time() < end_time:
             if rs485.write(bytearray.fromhex(packet_hex)) == False:
+                failed_count += 1
+                logging.warning(f'[BATCH_DEBUG] Batch_off packet write failed (attempt {count+1})')
                 break
             count += 1
+            if count % 5 == 0:  # 5번마다 진행 상황 로깅
+                logging.info(f'[BATCH_DEBUG] Batch_off progress: {count} packets sent')
             time.sleep(interval)
-        logging.info(f'[BATCH_OFF] Sent {count} times over {duration}s')
+
+        logging.info(f'[BATCH_DEBUG] Batch_off transmission complete - Sent: {count}, Failed: {failed_count}, Duration: {duration}s')
     except Exception as ex:
-        logging.error(f'[BATCH_OFF] Error: {ex}')
+        logging.error(f'[BATCH_DEBUG] Batch_off error: {ex}')
 
 
 # hex parsing --------------------------------
@@ -415,6 +424,17 @@ def parse(hex_data):
             'value':value_h,
             'time':time.time(),
             'flag':None}
+
+    # 일괄소등 디버깅: 특수 패킷 타입(309c) 및 batch 관련 패킷 감지
+    if type_h == '309c':
+        logging.warning(f'[BATCH_DEBUG] Special packet type 309c detected!')
+        logging.warning(f'[BATCH_DEBUG]   Src: {src_h}, Dest: {dest_h}, Cmd: {cmd_h}, Value: {value_h}')
+        logging.warning(f'[BATCH_DEBUG]   Full packet: {hex_data}')
+    elif cmd_h in ['65', '66']:  # batch_on, batch_off commands
+        logging.warning(f'[BATCH_DEBUG] Batch command detected - Cmd: {cmd_h} ({cmd})')
+        logging.warning(f'[BATCH_DEBUG]   Type: {type_h}, Src: {src_h}, Dest: {dest_h}, Value: {value_h}')
+        logging.warning(f'[BATCH_DEBUG]   Full packet: {hex_data}')
+
     return ret
 
 
@@ -633,18 +653,24 @@ def mqtt_on_message(mqttc, obj, msg):
         onoff_hex = 'ff' if command == 'on' else '00'
         light_id = int(topic_d[3])
 
+        # 일괄소등 디버깅: 조명 제어 시작 로깅
+        logging.info(f'[BATCH_DEBUG] Light control start - Room: {topic_d[1]}, Light: {light_id}, Command: {command}')
+
         # turn on/off multiple lights at once : e.g) kocom/livingroom/light/12/command
         if light_id > 0:
             while light_id > 0:
                 n = light_id % 10
                 value = value[:n*2-2] + onoff_hex + value[n*2:]
+                logging.info(f'[BATCH_DEBUG] Sending light packet - dest: {dev_id}, src: {light_controller_addr}, value: {value}')
                 send_wait_response(dest=dev_id, src=light_controller_addr, value=value, log='light')
                 light_id = int(light_id/10)
         else:
+            logging.info(f'[BATCH_DEBUG] Sending light packet - dest: {dev_id}, src: {light_controller_addr}, value: {value}')
             send_wait_response(dest=dev_id, src=light_controller_addr, value=value, log='light')
 
         # 덕계역금강펜트리움: 조명 제어 후 일괄소등 자동 활성화 방지
         # 309c 패킷을 5초간 연속 전송하여 일괄소등 해제 유지
+        logging.info(f'[BATCH_DEBUG] Starting batch_off_continuous to prevent auto-activation')
         send_batch_off_continuous(duration=5)
 
     # gas off : kocom/livingroom/gas/command
@@ -721,6 +747,14 @@ def publish_status(p):
 
 def packet_processor(p):
     logtxt = ""
+
+    # 일괄소등 디버깅: batch device 패킷 감지
+    if p['src'] == 'batch' or p['dest'] == 'batch' or p['src_h'][:2] == '54' or p['dest_h'][:2] == '54':
+        logging.warning(f'[BATCH_DEBUG] Batch packet detected!')
+        logging.warning(f'[BATCH_DEBUG]   Type: {p["type"]}, Src: {p["src"]}({p["src_h"]}), Dest: {p["dest"]}({p["dest_h"]})')
+        logging.warning(f'[BATCH_DEBUG]   Cmd: {p["cmd"]}({p["cmd_h"]}), Value: {p["value"]}')
+        logging.warning(f'[BATCH_DEBUG]   Full packet: {p["header_h"]}{p["data_h"]}{p["chksum_h"]}{p["trailer_h"]}')
+
     if p['type'] == 'send' and p['dest'] == 'wallpad':  # response packet to wallpad
         if p['src'] == 'thermo' and p['cmd'] == 'state':
             state = thermo_parse(p['value'])
@@ -742,6 +776,9 @@ def packet_processor(p):
             state = {'state': p['cmd']}
             logtxt='[MQTT publish|gas] data[{}]'.format(state)
             mqttc.publish("kocom/livingroom/gas/state", json.dumps(state))
+        elif p['src'] == 'batch':
+            # 일괄소등 디버깅: batch device 상태 변경 감지
+            logging.warning(f'[BATCH_DEBUG] Batch state packet - Cmd: {p["cmd"]}, Value: {p["value"]}')
     elif p['type'] == 'send' and p['dest'] == 'elevator':
         floor = int(p['value'][2:4],16)
         rs485_floor = int(config.get('Elevator','rs485_floor', fallback=0))

@@ -51,16 +51,16 @@ mqtt_password: ""  # 비워두기
 1. **Mosquitto 브로커 설정**:
    ```yaml
    logins:
-     - username: hk
-       password: hk0129
+     - username: YOUR_USERNAME
+       password: YOUR_PASSWORD
    anonymous: false
    ```
 
 2. **Kocom 애드온 Configuration 설정**:
    ```yaml
    mqtt_allow_anonymous: false
-   mqtt_username: "hk"
-   mqtt_password: "hk0129"
+   mqtt_username: "YOUR_USERNAME"
+   mqtt_password: "YOUR_PASSWORD"
    ```
 
 3. **애드온 재시작**:
@@ -109,8 +109,8 @@ Socket Port: 8899
 MQTT Server: core-mosquitto
 MQTT Port: 1883
 MQTT Allow Anonymous: false
-MQTT Username: hk
-MQTT Password: hk0129
+MQTT Username: YOUR_USERNAME
+MQTT Password: YOUR_PASSWORD
 ```
 
 ## 📊 연결 확인

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.04.005] - 2026-04-30
+
+### 🐛 Debug
+- **일괄소등 원인 파악을 위한 상세 로깅 추가**
+  - 조명 제어 시 모든 패킷 로깅 (`[BATCH_DEBUG]` 태그)
+  - batch_off_continuous() 전송 상태 및 진행 상황 로깅
+  - 특수 패킷 타입 309c 감지 로깅
+  - batch device (54) 패킷 감지 및 상세 정보 로깅
+  - batch 명령(65/66) 감지 로깅
+- 일괄소등이 자동으로 활성화되는 원인 추적 가능
+
+---
+
 ## [2026.04.004] - 2026-04-30
 
 ### 🐛 Fixed

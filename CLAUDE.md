@@ -33,7 +33,7 @@ header  type     seq  mon   device    device  cmd    payload    check   trailer
 
 **Device Codes** (`device_t_dic`):
 - `01`: wallpad, `0e`: light, `2c`: gas, `36`: thermo
-- `39`: ac, `3b`: plug, `44`: elevator, `48`: fan, `54`: batch (일괄소등), `98`: air
+- `39`: ac, `3b`: plug, `44`: elevator, `48`: fan, `54`: batch (일괄소등)
 
 **Command Codes** (`cmd_t_dic`):
 - `00`: state, `01`: on, `02`: off, `3a`: query

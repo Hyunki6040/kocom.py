@@ -1,0 +1,85 @@
+{
+  "description": "Kocom Wallpad RS485 Packet Configuration for 덕계역금강펜트리움",
+  "devices": {
+    "01": "wallpad",
+    "0e": "light",
+    "2c": "gas",
+    "36": "thermo",
+    "39": "ac",
+    "3b": "plug",
+    "44": "elevator",
+    "48": "fan",
+    "54": "batch"
+  },
+  "commands": {
+    "00": "state",
+    "01": "on",
+    "02": "off",
+    "3a": "query",
+    "65": "batch_on",
+    "66": "batch_off"
+  },
+  "rooms": {
+    "00": "livingroom",
+    "01": "master",
+    "02": "office",
+    "03": "guest",
+    "04": "kitchen"
+  },
+  "room_aliases": {
+    "거실": "00",
+    "livingroom": "00",
+    "myhome": "00",
+    "안방": "01",
+    "master": "01",
+    "room1": "01",
+    "작업실": "02",
+    "office": "02",
+    "room2": "02",
+    "손님방": "03",
+    "guest": "03",
+    "room3": "03",
+    "주방": "04",
+    "kitchen": "04"
+  },
+  "special_packets": {
+    "batch_off": {
+      "hex": "aa55309c000eff010066ffffffffffffffff380d0d",
+      "description": "일괄소등 OFF 패킷 (덕계역금강펜트리움 전용)",
+      "duration": 5,
+      "interval": 0.3
+    }
+  },
+  "parsing": {
+    "thermo": {
+      "heat_mode_on": "11",
+      "heat_mode_off": "00",
+      "away_on": "01",
+      "away_off": "00"
+    },
+    "ac": {
+      "modes": {
+        "00": "cool",
+        "01": "fan_only",
+        "02": "dry",
+        "03": "auto"
+      },
+      "fan_speeds": {
+        "01": "LOW",
+        "02": "MEDIUM",
+        "03": "HIGH"
+      },
+      "state_on": "10",
+      "state_off": "00"
+    },
+    "fan": {
+      "presets": {
+        "40": "Low",
+        "80": "Medium",
+        "c0": "High"
+      },
+      "state_on": "1101",
+      "state_off": "0000"
+    }
+  }
+}
