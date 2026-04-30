@@ -29,7 +29,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # Version and constants -------------------------------
-SW_VERSION = '2026.05.002'
+SW_VERSION = '2026.05.003'
 CONFIG_FILE = 'kocom.conf'
 PACKETS_FILE = 'packets.json'
 PROTOCOL_FILE = 'protocol.json'
@@ -904,6 +904,11 @@ def publish_discovery(dev, sub=''):
         # 방별 조명 개수 가져오기
         room_code = room_h_dic.get(sub)
         max_lights = packet_config.get('room_lights', {}).get(room_code, 4)  # 기본값 4
+
+        # 조명이 없는 방은 discovery 생성 안 함
+        if max_lights == 0:
+            logging.info(f'[MQTT Discovery|light] Room {sub} has no lights - skipped')
+            return
 
         for num in range(1, max_lights + 1):
             #ha_topic = 'homeassistant/light/kocom_livingroom_light1/config'

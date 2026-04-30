@@ -221,6 +221,13 @@ class LightTester:
         """Get light number from user based on room"""
         max_lights = self.room_lights.get(room_code, 4)  # 기본값 4
 
+        # 조명이 없는 방
+        if max_lights == 0:
+            print("\n[알림] 이 방에는 조명이 없습니다.")
+            print("[INFO] This room has no lights.")
+            input("\n아무 키나 눌러 계속...")
+            return None
+
         print("\n[조명 선택 / Select Light]")
         for i in range(1, max_lights + 1):
             print(f"  {i}. 조명 {i}")

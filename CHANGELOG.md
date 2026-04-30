@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.05.003] - 2026-05-01
+
+### 🔧 Fixed
+- **Corrected room light counts for 덕계역금강펜트리움**
+  - 거실 (livingroom): 4 → 3 lights
+  - 주방 (kitchen): 4 → 0 lights (no lights)
+- **kocom.py**: Skip MQTT discovery for rooms with 0 lights
+- **test_light_interactive.py**: Show "no lights" message for rooms with 0 lights
+
+---
+
 ## [2026.05.002] - 2026-05-01
 
 ### 🏠 Customized for 덕계역금강펜트리움
