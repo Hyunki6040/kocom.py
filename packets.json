@@ -49,6 +49,14 @@
     "03": 1,
     "04": 0
   },
+  "room_names_korean": {
+    "livingroom": "거실",
+    "master": "안방",
+    "office": "작업실",
+    "guest": "손님방",
+    "kitchen": "주방",
+    "myhome": "거실"
+  },
   "special_packets": {
     "batch_off": {
       "hex": "aa55309c000eff010066ffffffffffffffff380d0d",

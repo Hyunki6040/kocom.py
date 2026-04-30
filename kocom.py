@@ -29,7 +29,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # Version and constants -------------------------------
-SW_VERSION = '2026.05.003'
+SW_VERSION = '2026.05.004'
 CONFIG_FILE = 'kocom.conf'
 PACKETS_FILE = 'packets.json'
 PROTOCOL_FILE = 'protocol.json'
@@ -827,7 +827,7 @@ def publish_discovery(dev, sub=''):
     if dev == 'fan':
         topic = 'homeassistant/fan/kocom_wallpad_fan/config'
         payload = {
-            'name': 'Kocom Wallpad Fan',
+            'name': '환풍기',
             'cmd_t': 'kocom/livingroom/fan/command',
             'stat_t': 'kocom/livingroom/fan/state',
             'stat_val_tpl': '{{ value_json.state }}',
@@ -855,7 +855,7 @@ def publish_discovery(dev, sub=''):
     elif dev == 'gas':
         topic = 'homeassistant/switch/kocom_wallpad_gas/config'
         payload = {
-            'name': 'Kocom Wallpad Gas',
+            'name': '가스 차단',
             'cmd_t': 'kocom/livingroom/gas/command',
             'stat_t': 'kocom/livingroom/gas/state',
             'val_tpl': '{{ value_json.state }}',
@@ -879,7 +879,7 @@ def publish_discovery(dev, sub=''):
     elif dev == 'elevator':
         topic = 'homeassistant/switch/kocom_wallpad_elevator/config'
         payload = {
-            'name': 'Kocom Wallpad Elevator',
+            'name': '엘리베이터 호출',
             'cmd_t': "kocom/myhome/elevator/command",
             'stat_t': "kocom/myhome/elevator/state",
             'val_tpl': "{{ value_json.state }}",
@@ -910,11 +910,14 @@ def publish_discovery(dev, sub=''):
             logging.info(f'[MQTT Discovery|light] Room {sub} has no lights - skipped')
             return
 
+        # 방 이름 한글 변환
+        room_name_kr = packet_config.get('room_names_korean', {}).get(sub, sub)
+
         for num in range(1, max_lights + 1):
             #ha_topic = 'homeassistant/light/kocom_livingroom_light1/config'
             topic = 'homeassistant/light/kocom_{}_light{}/config'.format(sub, num)
             payload = {
-                'name': 'Kocom {} Light{}'.format(sub, num),
+                'name': '{} 조명 {}'.format(room_name_kr, num),
                 'cmd_t': 'kocom/{}/light/{}/command'.format(sub, num),
                 'stat_t': 'kocom/{}/light/state'.format(sub),
                 'stat_val_tpl': '{{ value_json.light_' + str(num) + ' }}',
@@ -938,10 +941,12 @@ def publish_discovery(dev, sub=''):
                 logging.info(logtxt)
     elif dev == 'thermo':
         num = int(room_h_dic.get(sub))
+        # 방 이름 한글 변환
+        room_name_kr = packet_config.get('room_names_korean', {}).get(sub, sub)
         #ha_topic = 'homeassistant/climate/kocom_livingroom_thermostat/config'
         topic = 'homeassistant/climate/kocom_{}_thermostat/config'.format(sub)
         payload = {
-            'name': 'Kocom {} Thermostat'.format(sub),
+            'name': '{} 난방'.format(room_name_kr),
             'mode_cmd_t': 'kocom/room/thermo/{}/heat_mode/command'.format(num),
             'mode_stat_t': 'kocom/room/thermo/{}/state'.format(num),
             'mode_stat_tpl': '{{ value_json.heat_mode }}',
@@ -972,10 +977,12 @@ def publish_discovery(dev, sub=''):
             logging.info(logtxt)
     elif dev == 'ac':
         num = int(room_h_dic.get(sub))
+        # 방 이름 한글 변환
+        room_name_kr = packet_config.get('room_names_korean', {}).get(sub, sub)
         # ha_topic = 'homeassistant/climate/kocom_livingroom_thermostat/config'
         topic = 'homeassistant/climate/kocom_{}_ac/config'.format(num)
         payload = {
-            'name': 'kocom_ac_{}'.format(num),
+            'name': '{} 에어컨'.format(room_name_kr),
             'mode_cmd_t': 'kocom/room/ac/{}/ac_mode/command'.format(num),
             'mode_stat_t': 'kocom/room/ac/{}/state'.format(num),
             'mode_stat_tpl': '{{ value_json.state }}',
@@ -1010,7 +1017,7 @@ def publish_discovery(dev, sub=''):
     elif dev == 'query':
         topic = 'homeassistant/button/kocom_wallpad_query/config'
         payload = {
-            'name': 'Kocom Wallpad Query',
+            'name': '상태 조회',
             'cmd_t': 'kocom/myhome/query/command',
             'qos': 0,
             'uniq_id': '{}_{}_{}'.format('kocom', 'wallpad', dev),

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.05.004] - 2026-05-01
+
+### 🌐 Localization
+- **Korean entity names** - All Home Assistant entities now display in Korean
+  - 환풍기 (Fan)
+  - 가스 차단 (Gas)
+  - 엘리베이터 호출 (Elevator)
+  - {방} 조명 {번호} (Light) - 예: 거실 조명 1
+  - {방} 난방 (Thermostat) - 예: 안방 난방
+  - {방} 에어컨 (AC) - 예: 거실 에어컨
+  - 상태 조회 (Query)
+- **packets.json**: Added `room_names_korean` mapping
+
+---
+
 ## [2026.05.003] - 2026-05-01
 
 ### 🔧 Fixed
