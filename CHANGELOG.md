@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.04.004] - 2026-04-30
+
+### 🐛 Fixed
+- **Critical Dockerfile fix** - Added missing JSON configuration files (packets.json, protocol.json) to Docker image
+- Without these files, the addon would fail to start with "Failed to load" errors
+
+---
+
+## [2026.04.003] - 2026-04-30
+
+### 🏗️ Refactored
+- **JSON-based configuration** - Extracted all packet data and protocol values to separate JSON files
+  - Created `packets.json` - Device codes, commands, rooms, parsing configs, special packets
+  - Created `protocol.json` - Timing parameters, packet structure, sequence codes
+  - kocom.py now loads configuration dynamically via `load_json_config()`
+- **Removed hardcoded values** - All device codes, parsing logic, and protocol parameters now managed via JSON
+- **Improved maintainability** - Easy customization for different apartment complexes
+- **Security** - Removed exposed credentials from all files (public repo safety)
+
+### 🗑️ Removed
+- **Air quality sensor** - Removed device code 98 (air) - not supported in any public Kocom source
+
+---
+
 ## [2026.04.002] - 2026-04-30
 
 ### 🐛 Fixed

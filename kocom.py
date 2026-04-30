@@ -4,7 +4,7 @@
 '''
  Kocom Wallpad RS485 Integration for Home Assistant
  Updated for Python 3.12 and HA 2025.x compatibility
- 
+
  For 덕계역금강펜트리움
  Maintained by robert
  Based on work by vifrost, kyet, 룰루해피, 따분, Susu Daddy, harwin1
@@ -23,43 +23,96 @@ import serial
 import logging
 import configparser
 from typing import Optional, Dict, Any, Union
+from pathlib import Path
 import paho.mqtt.client as mqtt
 from paho.mqtt.client import MQTTMessage, Client
 
 
-# define -------------------------------
-SW_VERSION = '2026.04.002'
+# Version and constants -------------------------------
+SW_VERSION = '2026.04.004'
 CONFIG_FILE = 'kocom.conf'
+PACKETS_FILE = 'packets.json'
+PROTOCOL_FILE = 'protocol.json'
 BUF_SIZE = 100
 
-read_write_gap = 0.03  # minimal time interval between last read to write
-polling_interval = 300  # polling interval
+# Global configuration dictionaries (loaded from JSON)
+protocol_config = {}
+packet_config = {}
+device_t_dic = {}
+cmd_t_dic = {}
+room_t_dic = {}
+room_h_dic = {}
+type_t_dic = {}
+seq_t_dic = {}
+device_h_dic = {}
+cmd_h_dic = {}
+type_h_dic = {}
+seq_h_dic = {}
 
+# Protocol parameters (loaded from JSON)
+read_write_gap = 0.03
+polling_interval = 300
 header_h = 'aa55'
 trailer_h = '0d0d'
-packet_size = 21  # total 21bytes
-chksum_position = 18  # 18th byte
+packet_size = 21
+chksum_position = 18
+BATCH_OFF_PACKET = ''
 
-type_t_dic = {'30b':'send', '30d':'ack'}
-seq_t_dic = {'c':1, 'd':2, 'e':3, 'f':4}
-# device_t_dic = {'01':'wallpad', '0e':'light', '2c':'gas', '36':'thermo', '3b': 'plug', '44':'elevator', '48':'fan'}  # 2023.08 AC, AIR 추가
-device_t_dic = {'01': 'wallpad', '0e': 'light', '2c': 'gas', '36': 'thermo', '39': 'ac', '3b': 'plug', '44': 'elevator', '48': 'fan', '54': 'batch', '98': 'air'}
-cmd_t_dic = {'00':'state', '01':'on', '02':'off', '3a':'query', '65':'batch_on', '66':'batch_off'}
-# 덕계역금강펜트리움 room mapping: 00=거실, 01=안방, 02=작업실, 03=손님방, 04=주방(미지원)
-room_t_dic = {'00':'livingroom', '01':'master', '02':'office', '03':'guest', '04':'kitchen'}
 
-type_h_dic = {v: k for k, v in type_t_dic.items()}
-seq_h_dic = {v: k for k, v in seq_t_dic.items()}
-device_h_dic = {v: k for k, v in device_t_dic.items()}
-cmd_h_dic = {v: k for k, v in cmd_t_dic.items()}
-# 덕계역금강펜트리움: 거실=00, 안방=01, 작업실=02, 손님방=03
-room_h_dic = {
-    'livingroom':'00', 'myhome':'00', '거실':'00',
-    'master':'01', 'room1':'01', '안방':'01',
-    'office':'02', 'room2':'02', '작업실':'02',
-    'guest':'03', 'room3':'03', '손님방':'03',
-    'kitchen':'04', '주방':'04'
-}
+def load_json_config():
+    """Load packet and protocol configuration from JSON files"""
+    global protocol_config, packet_config
+    global device_t_dic, cmd_t_dic, room_t_dic, room_h_dic
+    global type_t_dic, seq_t_dic, device_h_dic, cmd_h_dic, type_h_dic, seq_h_dic
+    global read_write_gap, polling_interval, header_h, trailer_h, packet_size, chksum_position
+    global BATCH_OFF_PACKET
+
+    script_dir = Path(__file__).parent
+
+    # Load protocol configuration
+    try:
+        with open(script_dir / PROTOCOL_FILE, 'r', encoding='utf-8') as f:
+            protocol_config = json.load(f)
+
+        # Extract protocol parameters
+        read_write_gap = protocol_config['timing']['read_write_gap']
+        polling_interval = protocol_config['timing']['polling_interval']
+        header_h = protocol_config['packet_structure']['header']
+        trailer_h = protocol_config['packet_structure']['trailer']
+        packet_size = protocol_config['packet_structure']['total_size']
+        chksum_position = protocol_config['packet_structure']['checksum_position']
+        type_t_dic = protocol_config['packet_types']
+        seq_t_dic = protocol_config['sequence_codes']
+
+        logging.info(f'[CONFIG] Loaded protocol configuration from {PROTOCOL_FILE}')
+    except Exception as e:
+        logging.error(f'[CONFIG] Failed to load {PROTOCOL_FILE}: {e}')
+        sys.exit(1)
+
+    # Load packet configuration
+    try:
+        with open(script_dir / PACKETS_FILE, 'r', encoding='utf-8') as f:
+            packet_config = json.load(f)
+
+        # Extract packet dictionaries
+        device_t_dic = packet_config['devices']
+        cmd_t_dic = packet_config['commands']
+        room_t_dic = packet_config['rooms']
+        room_h_dic = packet_config['room_aliases']
+
+        # Extract special packets
+        BATCH_OFF_PACKET = packet_config['special_packets']['batch_off']['hex']
+
+        logging.info(f'[CONFIG] Loaded packet configuration from {PACKETS_FILE}')
+    except Exception as e:
+        logging.error(f'[CONFIG] Failed to load {PACKETS_FILE}: {e}')
+        sys.exit(1)
+
+    # Create reverse mappings
+    type_h_dic = {v: k for k, v in type_t_dic.items()}
+    seq_h_dic = {v: k for k, v in seq_t_dic.items()}
+    device_h_dic = {v: k for k, v in device_t_dic.items()}
+    cmd_h_dic = {v: k for k, v in cmd_t_dic.items()}
 
 # mqtt functions ----------------------------
 
@@ -305,28 +358,29 @@ def chksum(data_h):
     return '{0:02x}'.format((sum_buf)%256)  # return chksum hex value in text format
 
 
-# 일괄소등 OFF 패킷 (덕계역금강펜트리움)
-# 조명 제어 후 일괄소등이 자동으로 켜지는 문제 해결
-# 309c 타입, dest=0eff(전체조명), cmd=66(batch_off), value=ff(전체ON)
-BATCH_OFF_PACKET = 'aa55309c000eff010066ffffffffffffffff380d0d'
-
-def send_batch_off_continuous(duration=5):
+def send_batch_off_continuous(duration=None):
     """일괄소등 OFF 패킷을 연속으로 전송하여 일괄소등 해제 유지
 
     Args:
-        duration: 전송 지속 시간 (초), 기본 5초
+        duration: 전송 지속 시간 (초), None이면 JSON 설정값 사용
     """
     try:
+        batch_config = packet_config['special_packets']['batch_off']
+        if duration is None:
+            duration = batch_config['duration']
+        interval = batch_config['interval']
+        packet_hex = batch_config['hex']
+
         end_time = time.time() + duration
         count = 0
         while time.time() < end_time:
-            if rs485.write(bytearray.fromhex(BATCH_OFF_PACKET)) == False:
+            if rs485.write(bytearray.fromhex(packet_hex)) == False:
                 break
             count += 1
-            time.sleep(0.3)
-        logging.info('[BATCH_OFF] Sent {} times'.format(count))
+            time.sleep(interval)
+        logging.info(f'[BATCH_OFF] Sent {count} times over {duration}s')
     except Exception as ex:
-        logging.error('[BATCH_OFF] Error: {}'.format(ex))
+        logging.error(f'[BATCH_OFF] Error: {ex}')
 
 
 # hex parsing --------------------------------
@@ -365,10 +419,16 @@ def parse(hex_data):
 
 
 def thermo_parse(value):
-    ret = { 'heat_mode': 'heat' if value[:2] == '11' else 'off',
-            'away': 'true' if value[2:4] == '01' else 'false',
-            'set_temp': int(value[4:6], 16) if value[:2] == '11' else int(config.get('User', 'init_temp')),
-            'cur_temp': int(value[8:10], 16)}
+    """Parse thermostat packet value"""
+    thermo_cfg = packet_config['parsing']['thermo']
+    heat_mode_on = thermo_cfg['heat_mode_on']
+
+    ret = {
+        'heat_mode': 'heat' if value[:2] == heat_mode_on else 'off',
+        'away': 'true' if value[2:4] == thermo_cfg['away_on'] else 'false',
+        'set_temp': int(value[4:6], 16) if value[:2] == heat_mode_on else int(config.get('User', 'init_temp')),
+        'cur_temp': int(value[8:10], 16)
+    }
     return ret
 
 
@@ -380,28 +440,36 @@ def light_parse(value):
 
 
 def fan_parse(value):
-    preset_dic = {'40':'Low', '80':'Medium', 'c0':'High'}
-#   state = 'off' if value[:2] == '10' else 'on'
-    state = 'off' if value[:2] == '00' else 'on'
-    preset = 'Off' if state == 'off' else preset_dic.get(value[4:6])
-    logtxt='[MQTT Parse | Fan] value[{}], state[{}]'.format(value, state)    # 20221108 주석기능 추가
-    if logtxt != "" and config.get('Log', 'show_recv_hex') == 'True':
-        logging.info(logtxt)
-    return { 'state': state, 'preset': preset}
+    """Parse fan packet value"""
+    fan_cfg = packet_config['parsing']['fan']
+    preset_dic = fan_cfg['presets']
+    state_off = fan_cfg['state_off'][:2]  # Get first 2 chars for comparison
 
-# 2023.08 AC 추가
+    state = 'off' if value[:2] == state_off else 'on'
+    preset = 'Off' if state == 'off' else preset_dic.get(value[4:6])
+
+    logtxt = f'[MQTT Parse | Fan] value[{value}], state[{state}]'
+    if config.get('Log', 'show_recv_hex') == 'True':
+        logging.info(logtxt)
+    return {'state': state, 'preset': preset}
+
 def ac_parse(value):
-    mode_dic = {'00': 'cool', '01': 'fan_only', '02': 'dry', '03': 'auto'}
-    spd_dic = {'01': 'LOW', '02': 'MEDIUM', '03': 'HIGH'}
-    
-    state = mode_dic.get(value[2:4]) if value[:2] == '10' else 'off'
+    """Parse AC packet value"""
+    ac_cfg = packet_config['parsing']['ac']
+    mode_dic = ac_cfg['modes']
+    spd_dic = ac_cfg['fan_speeds']
+    state_on = ac_cfg['state_on']
+
+    state = mode_dic.get(value[2:4]) if value[:2] == state_on else 'off'
     fan = spd_dic.get(value[4:6])
     temperature = int(value[8:10], 16)
     target = int(value[10:12], 16)
-    logtxt = '[MQTT Parse | Ac] value[{}], state[{}]'.format(value, state)    # 20221108 주석기능 추가
-    if logtxt != '' and config.get('Log', 'show_recv_hex') == 'True':
+
+    logtxt = f'[MQTT Parse | AC] value[{value}], state[{state}]'
+    if config.get('Log', 'show_recv_hex') == 'True':
         logging.info(logtxt)
     return {'state': state, 'fan': fan, 'temperature': temperature, 'target': target}
+
 
 # query device --------------------------
 
@@ -507,50 +575,54 @@ def mqtt_on_message(mqttc, obj, msg):
 
     # thermo heat/off : kocom/room/thermo/3/heat_mode/command
     if 'thermo' in topic_d and 'heat_mode' in topic_d:
-#       heatmode_dic = {'heat': '11', 'off': '01'}
-        heatmode_dic = {'heat': '11', 'off': '00'}
+        thermo_cfg = packet_config['parsing']['thermo']
+        heatmode_dic = {'heat': thermo_cfg['heat_mode_on'], 'off': thermo_cfg['heat_mode_off']}
 
         dev_id = device_h_dic['thermo']+'{0:02x}'.format(int(topic_d[3]))
         q = query(dev_id)
-        #settemp_hex = q['value'][4:6] if q['flag']!=False else '14'
         settemp_hex = '{0:02x}'.format(int(config.get('User', 'thermo_init_temp'))) if q['flag']!=False else '14'
         value = heatmode_dic.get(command) + '00' + settemp_hex + '0000000000'
         send_wait_response(dest=dev_id, value=value, log='thermo heatmode')
 
     # thermo set temp : kocom/room/thermo/3/set_temp/command
     elif 'thermo' in topic_d and 'set_temp' in topic_d:
+        thermo_cfg = packet_config['parsing']['thermo']
         dev_id = device_h_dic['thermo']+'{0:02x}'.format(int(topic_d[3]))
         settemp_hex = '{0:02x}'.format(int(float(command)))
 
-        value = '1100' + settemp_hex + '0000000000'
+        value = thermo_cfg['heat_mode_on'] + '00' + settemp_hex + '0000000000'
         send_wait_response(dest=dev_id, value=value, log='thermo settemp')
 
  # 2023.08 AC 추가
     elif 'ac' in topic_d and 'ac_mode' in topic_d:
-        is_on = '10' if command != 'off' else '00'
-        acmode_dic = {'off': '00', 'cool': '00','fan_only': '01', 'dry': '02', 'auto': '03'}
+        ac_cfg = packet_config['parsing']['ac']
+        is_on = ac_cfg['state_on'] if command != 'off' else ac_cfg['state_off']
+        acmode_dic = {mode: code for code, mode in ac_cfg['modes'].items()}
+        acmode_dic['off'] = '00'  # off mode uses cool mode code
         dev_id = device_h_dic['ac']+'{0:02x}'.format(int(topic_d[3]))
         #q = query(dev_id)
         #settemp_hex = '{0:02x}'.format(int(config.get('User', 'ac_init_temp'))) if q['flag'] != False else '12'
-        
+
         value = is_on + acmode_dic.get(command, config.get('User', 'ac_init_mode')) + '000000000000'
         send_wait_response(dest=dev_id, value=value, log='ac mode')
 
     elif 'ac' in topic_d and 'fan_mode' in topic_d:
-        fan_dic = {'LOW': '01', 'MEDIUM': '02', 'HIGH': '03'}
+        ac_cfg = packet_config['parsing']['ac']
+        fan_dic = {speed: code for code, speed in ac_cfg['fan_speeds'].items()}
         dev_id = device_h_dic['ac']+'{0:02x}'.format(int(topic_d[3]))
         #q = query(dev_id)
         #settemp_hex = '{0:02x}'.format(int(config.get('User', 'ac_init_temp'))) if q['flag'] != False else '12'
-        
+
         value = '1010' + fan_dic.get(command, config.get('User', 'ac_init_fan_mode')) + '0000000000'
         send_wait_response(dest=dev_id, value=value, log='ac mode')
         
     # ac set temp : kocom/room/ac/3/set_temp/command
     elif 'ac' in topic_d and 'set_temp' in topic_d:
+        ac_cfg = packet_config['parsing']['ac']
         dev_id = device_h_dic['ac']+'{0:02x}'.format(int(topic_d[3]))
         settemp_hex = '{0:02x}'.format(int(float(command)))
 
-        value = '1010000000' + settemp_hex + '0000'
+        value = ac_cfg['state_on'] + '10000000' + settemp_hex + '0000'
         send_wait_response(dest=dev_id, value=value, log='ac settemp')
  
  
@@ -608,10 +680,11 @@ def mqtt_on_message(mqttc, obj, msg):
 
     # kocom/livingroom/fan/set_preset_mode/command
     elif 'fan' in topic_d and 'set_preset_mode' in topic_d:
+        fan_cfg = packet_config['parsing']['fan']
         dev_id = device_h_dic['fan'] + room_h_dic.get(topic_d[1])
-        onoff_dic = {'off':'0000', 'on':'1101'}  
-       #onoff_dic = {'off':'1000', 'on':'1100'}
-        speed_dic = {'Off':'00', 'Low':'40', 'Medium':'80', 'High':'c0'}
+        onoff_dic = {'off': fan_cfg['state_off'], 'on': fan_cfg['state_on']}
+        speed_dic = {preset: code for code, preset in fan_cfg['presets'].items()}
+        speed_dic['Off'] = '00'  # Off preset uses 00 speed code
         if command == 'Off':
             onoff = onoff_dic['off']
         elif command in speed_dic.keys(): # fan on with specified speed
@@ -623,10 +696,10 @@ def mqtt_on_message(mqttc, obj, msg):
 
     # kocom/livingroom/fan/command
     elif 'fan' in topic_d:
+        fan_cfg = packet_config['parsing']['fan']
         dev_id = device_h_dic['fan'] + room_h_dic.get(topic_d[1])
-        onoff_dic = {'off':'0000', 'on':'1101'}  
-       #onoff_dic = {'off':'1000', 'on':'1100'}
-        speed_dic = {'Low':'40', 'Medium':'80', 'High':'c0'}
+        onoff_dic = {'off': fan_cfg['state_off'], 'on': fan_cfg['state_on']}
+        speed_dic = {preset: code for code, preset in fan_cfg['presets'].items()}
         init_fan_mode = config.get('User', 'init_fan_mode')
         if command in onoff_dic.keys(): # fan on off with previous speed
             onoff = onoff_dic.get(command)
@@ -657,11 +730,6 @@ def packet_processor(p):
             state = ac_parse(p['value'])
             logtxt = '[MQTT publish|ac] id[{}] data[{}]'.format(p['src_subid'], state)
             mqttc.publish('kocom/room/ac/' + p['src_subid'] + '/state', json.dumps(state), retain=True)
-        elif p['src'] == 'air':
-            if int(p['value'], 16) > 0:
-                state = air_parse(p['value'])
-            logtxt = '[MQTT publish|air] data[{}]'.format(state)
-            mqttc.publish('kocom/livingroom/air/state', json.dumps(state), retain=True)
         elif p['src'] == 'light' and p['cmd'] == 'state':
             state = light_parse(p['value'])
             logtxt='[MQTT publish|light] room[{}] data[{}]'.format(p['src_room'], state)
@@ -737,31 +805,6 @@ def publish_discovery(dev, sub=''):
         mqttc.publish(topic, json.dumps(payload), retain=True)
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
-    elif dev == 'air':
-        air_attr = {'pm10': ['molecule', 'µg/m³'], 'pm25': ['molecule', 'µg/m³'], 'co2': ['molecule-co2', 'ppm'], 'tvocs': ['molecule', 'ppb'], 'temperature': ['thermometer', '°C'], 'humidity': ['water-percent', '%'], 'score': ['periodic-table', '%']}
-        for key, icon_unit in air_attr.items():
-            icon, unit = icon_unit
-            topic = f'homeassistant/sensor/kocom_wallpad_air_{key}/config'
-            payload = {
-                'name': f'kocom_air_{key}',
-                'stat_t': 'kocom/livingroom/air/state',
-                'val_tpl': '{{ value_json.' + key + ' }}',
-                'qos': 0,
-                'uniq_id': f'kocom_air_{key}',
-                'icon': f'mdi:{icon}',
-                'unit_of_meas': unit,
-                'device': {
-                    'name': '코콤 스마트 월패드',
-                    'ids': 'kocom_smart_wallpad',
-                    'mf': 'KOCOM',
-                    'mdl': '스마트 월패드',
-                    'sw': SW_VERSION
-                }
-            }
-            logtxt = '[MQTT Discovery|{}] data[{}]'.format(dev, topic)
-            mqttc.publish(topic, json.dumps(payload), retain=True)
-            if logtxt != '' and config.get('Log', 'show_mqtt_publish') == 'True':
-                logging.info(logtxt)
     elif dev == 'gas':
         topic = 'homeassistant/switch/kocom_wallpad_gas/config'
         payload = {
@@ -937,7 +980,7 @@ def poll_state(enforce=False):
     poll_timer.cancel()
 
     dev_list = [x.strip() for x in config.get('Device','enabled').split(',')]
-    no_polling_list = ['wallpad', 'elevator', 'light']  # light 폴링 시 일괄소등 트리거됨
+    no_polling_list = protocol_config.get('no_polling_devices', ['wallpad', 'elevator', 'light'])
 
     #thread health check
     for thread_instance in thread_list:
@@ -1056,6 +1099,9 @@ if __name__ == "__main__":
     light_controller_addr = None
 
     logging.basicConfig(format='%(levelname)s[%(asctime)s]:%(message)s ', level=logging.DEBUG)
+
+    # Load JSON configuration files
+    load_json_config()
 
     # Try to read Home Assistant addon options first
     ha_options = None

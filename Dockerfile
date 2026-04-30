@@ -15,7 +15,7 @@ COPY requirements.txt /
 RUN pip3 install --no-cache-dir -r /requirements.txt
 
 # Copy data for add-on
-COPY run.sh kocom.conf kocom.py /
+COPY run.sh kocom.conf kocom.py packets.json protocol.json /
 
 WORKDIR /share
 
