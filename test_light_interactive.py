@@ -31,11 +31,17 @@ class LightTester:
         with open(script_dir / 'packets.json', 'r', encoding='utf-8') as f:
             self.packet_config = json.load(f)
 
-        # Extract configurations
+        # Extract configurations (code → name)
         self.device_codes = self.packet_config['devices']
         self.cmd_codes = self.packet_config['commands']
         self.rooms = self.packet_config['rooms']
         self.room_aliases = self.packet_config['room_aliases']
+
+        # Create reverse mappings (name → code)
+        self.device_names = {v: k for k, v in self.device_codes.items()}
+        self.cmd_names = {v: k for k, v in self.cmd_codes.items()}
+        self.room_names = {v: k for k, v in self.rooms.items()}
+
         self.header = self.protocol_config['packet_structure']['header']
         self.trailer = self.protocol_config['packet_structure']['trailer']
 
@@ -89,9 +95,9 @@ class LightTester:
 
     def send_light_command(self, room_code, light_num, on_off):
         """Send light on/off command"""
-        light_code = self.device_codes['light']
+        light_code = self.device_names['light']  # name → code lookup
         light_controller = '5400'  # 덕계역금강펜트리움 전용
-        cmd_code = self.cmd_codes['state']
+        cmd_code = self.cmd_names['state']  # name → code lookup
 
         dest = light_code + room_code
         src = light_controller
@@ -170,9 +176,18 @@ class LightTester:
         """Show room selection menu"""
         print("\n[방 선택 / Select Room]")
         room_list = []
+
+        # Room name mapping for better Korean display
+        korean_map = {
+            'livingroom': '거실',
+            'master': '안방',
+            'office': '작업실',
+            'guest': '손님방',
+            'kitchen': '주방'
+        }
+
         for i, (code, name) in enumerate(self.rooms.items(), 1):
-            korean_names = [k for k, v in self.room_aliases.items() if v == code and len(k) > 2]
-            korean_name = korean_names[0] if korean_names else name
+            korean_name = korean_map.get(name, name)
             room_list.append((code, name, korean_name))
             print(f"  {i}. {korean_name} ({name})")
         return room_list
