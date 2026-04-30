@@ -29,7 +29,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # Version and constants -------------------------------
-SW_VERSION = '2026.05.001'
+SW_VERSION = '2026.05.002'
 CONFIG_FILE = 'kocom.conf'
 PACKETS_FILE = 'packets.json'
 PROTOCOL_FILE = 'protocol.json'
@@ -649,9 +649,19 @@ def mqtt_on_message(mqttc, obj, msg):
     # light on/off : kocom/livingroom/light/1/command
     elif 'light' in topic_d:
         dev_id = device_h_dic['light'] + room_h_dic.get(topic_d[1])
+        light_id = int(topic_d[3])
+
+        # 방별 조명 개수 확인 (덕계역금강펜트리움 전용)
+        room_code = room_h_dic.get(topic_d[1])
+        max_lights = packet_config.get('room_lights', {}).get(room_code, 4)
+
+        # 유효하지 않은 조명 번호는 무시
+        if light_id > max_lights:
+            logging.warning(f'[LIGHT] Invalid light number {light_id} for room {topic_d[1]} (max: {max_lights}) - ignored')
+            return
+
         value = query(dev_id)['value']
         onoff_hex = 'ff' if command == 'on' else '00'
-        light_id = int(topic_d[3])
 
         # 일괄소등 디버깅: 조명 제어 시작 로깅
         logging.info(f'[BATCH_DEBUG] Light control start - Room: {topic_d[1]}, Light: {light_id}, Command: {command}')
@@ -891,8 +901,11 @@ def publish_discovery(dev, sub=''):
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
     elif dev == 'light':
-                                  
-        for num in range(1, int(config.get('User', 'light_count'))+1):
+        # 방별 조명 개수 가져오기
+        room_code = room_h_dic.get(sub)
+        max_lights = packet_config.get('room_lights', {}).get(room_code, 4)  # 기본값 4
+
+        for num in range(1, max_lights + 1):
             #ha_topic = 'homeassistant/light/kocom_livingroom_light1/config'
             topic = 'homeassistant/light/kocom_{}_light{}/config'.format(sub, num)
             payload = {

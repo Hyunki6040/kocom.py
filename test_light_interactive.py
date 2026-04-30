@@ -36,6 +36,7 @@ class LightTester:
         self.cmd_codes = self.packet_config['commands']
         self.rooms = self.packet_config['rooms']
         self.room_aliases = self.packet_config['room_aliases']
+        self.room_lights = self.packet_config.get('room_lights', {})  # 방별 조명 개수
 
         # Protocol configurations
         self.packet_types = self.protocol_config['packet_types']
@@ -216,23 +217,24 @@ class LightTester:
             except KeyboardInterrupt:
                 return None
 
-    def get_light_number(self):
-        """Get light number from user"""
+    def get_light_number(self, room_code):
+        """Get light number from user based on room"""
+        max_lights = self.room_lights.get(room_code, 4)  # 기본값 4
+
         print("\n[조명 선택 / Select Light]")
-        print("  1. 조명 1")
-        print("  2. 조명 2")
-        print("  3. 조명 3")
-        print("  4. 조명 4")
+        for i in range(1, max_lights + 1):
+            print(f"  {i}. 조명 {i}")
+
         while True:
             try:
-                choice = input("\n조명 번호를 선택하세요 (1-4): ").strip()
+                choice = input(f"\n조명 번호를 선택하세요 (1-{max_lights}): ").strip()
                 if not choice:
                     return None
                 choice = int(choice)
-                if 1 <= choice <= 4:
+                if 1 <= choice <= max_lights:
                     return choice
                 else:
-                    print("[ERROR] 1-4 사이의 숫자를 입력하세요")
+                    print(f"[ERROR] 1-{max_lights} 사이의 숫자를 입력하세요")
             except ValueError:
                 print("[ERROR] 숫자를 입력하세요")
             except KeyboardInterrupt:
@@ -298,7 +300,7 @@ class LightTester:
                     if room_code is None:
                         continue
 
-                    light_num = self.get_light_number()
+                    light_num = self.get_light_number(room_code)
                     if light_num is None:
                         continue
 
@@ -315,7 +317,7 @@ class LightTester:
                     if room_code is None:
                         continue
 
-                    light_num = self.get_light_number()
+                    light_num = self.get_light_number(room_code)
                     if light_num is None:
                         continue
 

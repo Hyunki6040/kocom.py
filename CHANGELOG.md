@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.05.002] - 2026-05-01
+
+### 🏠 Customized for 덕계역금강펜트리움
+- **Room-specific light configuration** - Different number of lights per room
+  - 거실 (livingroom): 4 lights
+  - 안방 (master): 2 lights
+  - 작업실 (office): 1 light
+  - 손님방 (guest): 1 light
+  - 주방 (kitchen): 4 lights
+- **packets.json**: Added `room_lights` configuration
+- **kocom.py**: MQTT discovery and command validation based on room_lights
+- **test_light_interactive.py**: Dynamic light selection menu based on room
+
+---
+
 ## [2026.05.001] - 2026-05-01
 
 ### 🔧 Fixed
