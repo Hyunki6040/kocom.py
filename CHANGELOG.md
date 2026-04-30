@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.05.006] - 2026-05-01
+
+### 🌐 Localization Update
+- **English entity names** - All Home Assistant friendly_name fields now display in English
+  - Fan (환풍기)
+  - Gas Cutoff (가스 차단)
+  - Elevator Call (엘리베이터 호출)
+  - {Room} Light {Number} - 예: Livingroom Light 1
+  - {Room} Thermostat - 예: Master Bedroom Thermostat
+  - {Room} AC - 예: Livingroom AC
+  - Query Status (상태 조회)
+- **packets.json**: Added `room_names_english` mapping for proper entity naming
+- Better compatibility with Home Assistant UI translation system
+
+---
+
 ## [2026.05.005] - 2026-05-01
 
 ### 🧪 Testing Tools

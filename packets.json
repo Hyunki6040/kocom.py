@@ -57,6 +57,14 @@
     "kitchen": "주방",
     "myhome": "거실"
   },
+  "room_names_english": {
+    "livingroom": "Livingroom",
+    "master": "Master Bedroom",
+    "office": "Office",
+    "guest": "Guest Room",
+    "kitchen": "Kitchen",
+    "myhome": "Livingroom"
+  },
   "special_packets": {
     "batch_off": {
       "hex": "aa55309c000eff010066ffffffffffffffff380d0d",
