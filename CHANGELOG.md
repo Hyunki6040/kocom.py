@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.05.005] - 2026-05-01
+
+### 🧪 Testing Tools
+- **Comprehensive test tool** - Expanded test_light_interactive.py to include all device types
+  - 조명 (Light) - ON/OFF control
+  - 난방 (Thermostat) - Heat ON/OFF with temperature setting (5-30°C)
+  - 엘리베이터 (Elevator) - Call elevator
+  - 환풍기 (Fan) - OFF/Low/Medium/High presets
+  - 가스 (Gas) - Emergency cutoff
+  - 일괄소등 (Batch) - Batch ON/OFF/Continuous OFF
+- **Renamed class** - LightTester → WallpadTester for clarity
+- **Interactive menus** - Intuitive submenus for all device controls
+- **packets.json**: Added `batch_on` special packet configuration
+
+---
+
 ## [2026.05.004] - 2026-05-01
 
 ### 🌐 Localization

@@ -63,6 +63,10 @@
       "description": "일괄소등 OFF 패킷 (덕계역금강펜트리움 전용)",
       "duration": 5,
       "interval": 0.3
+    },
+    "batch_on": {
+      "hex": "aa55309c000eff01006500000000000000003f0d0d",
+      "description": "일괄소등 ON 패킷 (모든 조명 끔)"
     }
   },
   "parsing": {

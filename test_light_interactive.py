@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-Kocom Light Interactive Test Tool
-JSON 설정 기반 조명 테스트 대화형 프로그램
+Kocom Wallpad Interactive Test Tool
+JSON 설정 기반 월패드 전체 기능 테스트 대화형 프로그램
+- 조명, 난방, 환풍기, 가스, 엘리베이터, 일괄소등 제어
 """
 
 import json
@@ -12,7 +13,7 @@ import time
 from pathlib import Path
 
 
-class LightTester:
+class WallpadTester:
     def __init__(self):
         self.load_config()
         self.conn = None
@@ -143,6 +144,96 @@ class LightTester:
             print(f"[ERROR] Batch-off failed: {e}")
             return False
 
+    def send_thermostat_command(self, room_code, command, value=None):
+        """Send thermostat command"""
+        thermo_code = self.device_names['thermo']
+        wallpad = self.device_names['wallpad'] + '00'
+
+        dest = thermo_code + room_code
+        src = wallpad
+
+        if command == 'heat_on':
+            # Heat mode ON with temperature
+            temp_hex = '{0:02x}'.format(int(value)) if value else '16'  # Default 22°C
+            cmd = self.cmd_names['state']
+            packet_value = '11' + temp_hex + '000000000000'  # 11 = heat mode on
+        elif command == 'heat_off':
+            # Heat mode OFF
+            cmd = self.cmd_names['state']
+            packet_value = '0000000000000000'
+        else:
+            return False
+
+        print(f"\n[THERMO] Room: {room_code}, Command: {command}, Value: {packet_value}")
+        return self.send_packet(dest, src, cmd, packet_value)
+
+    def send_elevator_call(self):
+        """Call elevator"""
+        elevator_code = self.device_names['elevator']
+        wallpad = self.device_names['wallpad'] + '00'
+
+        dest = elevator_code + '00'
+        src = wallpad
+        cmd = self.cmd_names['on']
+        value = '0000000000000000'
+
+        print(f"\n[ELEVATOR] Calling elevator")
+        return self.send_packet(dest, src, cmd, value)
+
+    def send_fan_command(self, preset):
+        """Send fan command"""
+        fan_code = self.device_names['fan']
+        wallpad = self.device_names['wallpad'] + '00'
+
+        dest = fan_code + '00'
+        src = wallpad
+        cmd = self.cmd_names['state']
+
+        # Fan presets from packets.json parsing.fan.presets
+        preset_map = {
+            'off': '0000000000000000',
+            'low': '4000000000000000',
+            'medium': '8000000000000000',
+            'high': 'c000000000000000'
+        }
+
+        value = preset_map.get(preset.lower(), '0000000000000000')
+
+        print(f"\n[FAN] Preset: {preset}, Value: {value}")
+        return self.send_packet(dest, src, cmd, value)
+
+    def send_gas_off(self):
+        """Send gas OFF command"""
+        gas_code = self.device_names['gas']
+        wallpad = self.device_names['wallpad'] + '00'
+
+        dest = gas_code + '00'
+        src = wallpad
+        cmd = self.cmd_names['off']
+        value = '0000000000000000'
+
+        print(f"\n[GAS] Sending gas OFF command")
+        return self.send_packet(dest, src, cmd, value)
+
+    def send_batch_on(self):
+        """Send batch ON (일괄소등 활성화) packet"""
+        batch_config = self.packet_config.get('special_packets', {}).get('batch_on')
+        if not batch_config:
+            # Fallback: construct batch ON packet
+            packet_hex = 'aa55309c000eff01006500000000000000003f0d0d'
+        else:
+            packet_hex = batch_config['hex']
+
+        print(f"\n[BATCH_ON] Sending batch-on packet")
+        print(f"  Packet: {packet_hex}")
+
+        try:
+            self.conn.send(bytearray.fromhex(packet_hex))
+            return True
+        except Exception as e:
+            print(f"[ERROR] Batch-on failed: {e}")
+            return False
+
     def send_batch_off_continuous(self, duration=5, interval=0.3):
         """Send batch-off continuously"""
         batch_config = self.packet_config['special_packets']['batch_off']
@@ -168,14 +259,17 @@ class LightTester:
     def show_menu(self):
         """Show interactive menu"""
         print("\n" + "="*60)
-        print("Kocom Light Interactive Test Tool")
+        print("Kocom Wallpad Interactive Test Tool")
+        print("코콤 월패드 테스트 도구")
         print("="*60)
         print("\n[Main Menu]")
-        print("  1. 조명 켜기 (Turn ON light)")
-        print("  2. 조명 끄기 (Turn OFF light)")
-        print("  3. 일괄소등 해제 - 단발 (Batch OFF - Single)")
-        print("  4. 일괄소등 해제 - 연속 (Batch OFF - Continuous)")
-        print("  5. 재연결 (Reconnect)")
+        print("  1. 조명 제어 (Light Control)")
+        print("  2. 난방 제어 (Thermostat Control)")
+        print("  3. 엘리베이터 호출 (Call Elevator)")
+        print("  4. 환풍기 제어 (Fan Control)")
+        print("  5. 가스 차단 (Gas Cutoff)")
+        print("  6. 일괄소등 제어 (Batch Control)")
+        print("  7. 재연결 (Reconnect)")
         print("  0. 종료 (Exit)")
         print("\n" + "="*60)
 
@@ -268,8 +362,8 @@ class LightTester:
     def run(self):
         """Run interactive test"""
         print("\n" + "="*60)
-        print("Kocom Light Interactive Test Tool")
-        print("코콤 조명 테스트 도구")
+        print("Kocom Wallpad Interactive Test Tool")
+        print("코콤 월패드 테스트 도구")
         print("="*60)
 
         # Get connection info
@@ -285,7 +379,7 @@ class LightTester:
             while True:
                 self.show_menu()
 
-                choice = input("\n메뉴를 선택하세요 (0-5): ").strip()
+                choice = input("\n메뉴를 선택하세요 (0-7): ").strip()
 
                 if not choice:
                     continue
@@ -301,8 +395,16 @@ class LightTester:
                     print("\n[EXIT] 프로그램을 종료합니다...")
                     break
 
-                # 1. Turn ON light
+                # 1. Light Control
                 elif choice == 1:
+                    print("\n[조명 제어 / Light Control]")
+                    print("  1. 켜기 (ON)")
+                    print("  2. 끄기 (OFF)")
+                    sub_choice = input("선택: ").strip()
+
+                    if sub_choice not in ['1', '2']:
+                        continue
+
                     room_code = self.get_room_choice()
                     if room_code is None:
                         continue
@@ -311,52 +413,121 @@ class LightTester:
                     if light_num is None:
                         continue
 
-                    if self.send_light_command(room_code, light_num, 'on'):
+                    on_off = 'on' if sub_choice == '1' else 'off'
+                    if self.send_light_command(room_code, light_num, on_off):
                         room_name = self.rooms[room_code]
                         korean_names = [k for k, v in self.room_aliases.items() if v == room_code and len(k) > 2]
                         korean_name = korean_names[0] if korean_names else room_name
-                        print(f"\n[성공] {korean_name} 조명 {light_num}번을 켰습니다")
-                        print(f"[OK] Light {light_num} in {room_name} turned ON")
+                        action_kr = "켰습니다" if on_off == 'on' else "껐습니다"
+                        action_en = "ON" if on_off == 'on' else "OFF"
+                        print(f"\n[성공] {korean_name} 조명 {light_num}번을 {action_kr}")
+                        print(f"[OK] Light {light_num} in {room_name} turned {action_en}")
 
-                # 2. Turn OFF light
+                # 2. Thermostat Control
                 elif choice == 2:
+                    print("\n[난방 제어 / Thermostat Control]")
                     room_code = self.get_room_choice()
                     if room_code is None:
                         continue
 
-                    light_num = self.get_light_number(room_code)
-                    if light_num is None:
-                        continue
+                    print("\n[제어 선택]")
+                    print("  1. 난방 켜기 (Heat ON)")
+                    print("  2. 난방 끄기 (Heat OFF)")
+                    sub_choice = input("선택: ").strip()
 
-                    if self.send_light_command(room_code, light_num, 'off'):
-                        room_name = self.rooms[room_code]
-                        korean_names = [k for k, v in self.room_aliases.items() if v == room_code and len(k) > 2]
-                        korean_name = korean_names[0] if korean_names else room_name
-                        print(f"\n[성공] {korean_name} 조명 {light_num}번을 껐습니다")
-                        print(f"[OK] Light {light_num} in {room_name} turned OFF")
+                    if sub_choice == '1':
+                        # Heat ON - ask for temperature
+                        temp_input = input("온도 설정 (5-30°C) [기본값: 22]: ").strip()
+                        temp = int(temp_input) if temp_input else 22
+                        if temp < 5 or temp > 30:
+                            print("[ERROR] 온도는 5-30°C 사이여야 합니다")
+                            continue
 
-                # 3. Batch OFF (single)
+                        if self.send_thermostat_command(room_code, 'heat_on', temp):
+                            room_name = self.rooms[room_code]
+                            korean_names = [k for k, v in self.room_aliases.items() if v == room_code and len(k) > 2]
+                            korean_name = korean_names[0] if korean_names else room_name
+                            print(f"\n[성공] {korean_name} 난방을 {temp}°C로 설정했습니다")
+                            print(f"[OK] {room_name} thermostat set to {temp}°C")
+
+                    elif sub_choice == '2':
+                        # Heat OFF
+                        if self.send_thermostat_command(room_code, 'heat_off'):
+                            room_name = self.rooms[room_code]
+                            korean_names = [k for k, v in self.room_aliases.items() if v == room_code and len(k) > 2]
+                            korean_name = korean_names[0] if korean_names else room_name
+                            print(f"\n[성공] {korean_name} 난방을 껐습니다")
+                            print(f"[OK] {room_name} thermostat turned OFF")
+
+                # 3. Elevator Call
                 elif choice == 3:
-                    print("\n[일괄소등 해제 - 단발]")
-                    confirm = input("일괄소등 해제 패킷을 전송하시겠습니까? (y/n): ").strip().lower()
+                    print("\n[엘리베이터 호출 / Call Elevator]")
+                    confirm = input("엘리베이터를 호출하시겠습니까? (y/n): ").strip().lower()
                     if confirm == 'y' or confirm == 'yes':
-                        if self.send_batch_off():
-                            print("\n[성공] 일괄소등 해제 패킷을 전송했습니다")
-                            print("[OK] Batch-off packet sent")
+                        if self.send_elevator_call():
+                            print("\n[성공] 엘리베이터 호출 신호를 전송했습니다")
+                            print("[OK] Elevator call signal sent")
 
-                # 4. Batch OFF (continuous)
+                # 4. Fan Control
                 elif choice == 4:
-                    duration = self.get_duration()
-                    if duration is None:
-                        continue
+                    print("\n[환풍기 제어 / Fan Control]")
+                    print("  1. 끄기 (OFF)")
+                    print("  2. 약 (Low)")
+                    print("  3. 중 (Medium)")
+                    print("  4. 강 (High)")
+                    sub_choice = input("선택: ").strip()
 
-                    print(f"\n[일괄소등 해제 - 연속] {duration}초간 전송합니다...")
-                    if self.send_batch_off_continuous(duration=duration):
-                        print(f"\n[성공] {duration}초간 일괄소등 해제 패킷을 전송했습니다")
-                        print(f"[OK] Batch-off continuous for {duration}s complete")
+                    preset_map = {'1': 'off', '2': 'low', '3': 'medium', '4': 'high'}
+                    preset = preset_map.get(sub_choice)
 
-                # 5. Reconnect
+                    if preset:
+                        if self.send_fan_command(preset):
+                            preset_kr = {'off': '끄기', 'low': '약', 'medium': '중', 'high': '강'}
+                            print(f"\n[성공] 환풍기를 {preset_kr[preset]}로 설정했습니다")
+                            print(f"[OK] Fan set to {preset.upper()}")
+
+                # 5. Gas Cutoff
                 elif choice == 5:
+                    print("\n[가스 차단 / Gas Cutoff]")
+                    confirm = input("가스를 차단하시겠습니까? (y/n): ").strip().lower()
+                    if confirm == 'y' or confirm == 'yes':
+                        if self.send_gas_off():
+                            print("\n[성공] 가스 차단 신호를 전송했습니다")
+                            print("[OK] Gas cutoff signal sent")
+
+                # 6. Batch Control
+                elif choice == 6:
+                    print("\n[일괄소등 제어 / Batch Control]")
+                    print("  1. 일괄소등 활성화 (Batch ON - 모든 조명 끔)")
+                    print("  2. 일괄소등 해제 (Batch OFF - 단발)")
+                    print("  3. 일괄소등 해제 (Batch OFF - 연속)")
+                    sub_choice = input("선택: ").strip()
+
+                    if sub_choice == '1':
+                        confirm = input("일괄소등을 활성화하시겠습니까? (y/n): ").strip().lower()
+                        if confirm == 'y' or confirm == 'yes':
+                            if self.send_batch_on():
+                                print("\n[성공] 일괄소등 활성화 패킷을 전송했습니다")
+                                print("[OK] Batch-on packet sent")
+
+                    elif sub_choice == '2':
+                        confirm = input("일괄소등 해제 패킷을 전송하시겠습니까? (y/n): ").strip().lower()
+                        if confirm == 'y' or confirm == 'yes':
+                            if self.send_batch_off():
+                                print("\n[성공] 일괄소등 해제 패킷을 전송했습니다")
+                                print("[OK] Batch-off packet sent")
+
+                    elif sub_choice == '3':
+                        duration = self.get_duration()
+                        if duration is None:
+                            continue
+                        print(f"\n[일괄소등 해제 - 연속] {duration}초간 전송합니다...")
+                        if self.send_batch_off_continuous(duration=duration):
+                            print(f"\n[성공] {duration}초간 일괄소등 해제 패킷을 전송했습니다")
+                            print(f"[OK] Batch-off continuous for {duration}s complete")
+
+                # 7. Reconnect
+                elif choice == 7:
                     print("\n[재연결]")
                     self.disconnect()
                     if self.connect(self.server, self.port):
@@ -364,7 +535,7 @@ class LightTester:
                         print("[OK] Reconnected successfully")
 
                 else:
-                    print(f"[ERROR] 잘못된 선택입니다. 0-5 사이의 숫자를 입력하세요")
+                    print("[ERROR] 잘못된 선택입니다. 0-7 사이의 숫자를 입력하세요")
 
         except KeyboardInterrupt:
             print("\n\n[EXIT] 사용자에 의해 중단되었습니다")
@@ -374,5 +545,5 @@ class LightTester:
 
 
 if __name__ == '__main__':
-    tester = LightTester()
+    tester = WallpadTester()
     tester.run()
