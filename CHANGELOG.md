@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Changed `send_wait_response()` function signature to use `None` defaults
   - Default values now evaluated at function call time, not module load time
   - Prevents crash when JSON config not yet loaded
+- **Missing JSON files** - Fixed run.sh to copy packets.json and protocol.json to /share/kocom/
+  - Previously only kocom.py was copied, causing FileNotFoundError
+  - Now all required files are deployed to runtime directory
 
 ### 🌐 Localization Update
 - **English entity names** - All Home Assistant friendly_name fields now display in English
