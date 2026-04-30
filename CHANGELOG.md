@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.05.001] - 2026-05-01
+
+### 🔧 Fixed
+- **Thermostat minimum temperature** - Changed from 20°C to 5°C for proper heating control range
+  - Previously restricted to 20-30°C range
+  - Now allows full 5-30°C range for accurate temperature control
+
+---
+
 ## [2026.04.005] - 2026-04-30
 
 ### 🐛 Debug

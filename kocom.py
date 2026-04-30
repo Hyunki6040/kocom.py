@@ -29,7 +29,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # Version and constants -------------------------------
-SW_VERSION = '2026.04.005'
+SW_VERSION = '2026.05.001'
 CONFIG_FILE = 'kocom.conf'
 PACKETS_FILE = 'packets.json'
 PROTOCOL_FILE = 'protocol.json'
@@ -935,7 +935,7 @@ def publish_discovery(dev, sub=''):
             'curr_temp_t': 'kocom/room/thermo/{}/state'.format(num),
             'curr_temp_tpl': '{{ value_json.cur_temp }}',
             'modes': ['off', 'heat'],
-            'min_temp': 20,
+            'min_temp': 5,
             'max_temp': 30,
             'ret': 'false',
             'qos': 0,
