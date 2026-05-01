@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.05.010] - 2026-05-01
+
+### 🐛 Fixed
+- **Fan state feedback issue** - Fan now maintains correct state in Home Assistant
+  - Added immediate MQTT state publishing after fan commands
+  - Prevents HA from reverting to OFF when response packet is delayed or missing
+  - Applies to both on/off commands and preset mode changes
+  - Fan physical operation was correct, only HA display was affected
+
+---
+
 ## [2026.05.009] - 2026-05-01
 
 ### 🔧 Changed

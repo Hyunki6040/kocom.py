@@ -29,7 +29,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # Version and constants -------------------------------
-SW_VERSION = '2026.05.009'
+SW_VERSION = '2026.05.010'
 CONFIG_FILE = 'kocom.conf'
 PACKETS_FILE = 'packets.json'
 PROTOCOL_FILE = 'protocol.json'
@@ -761,6 +761,13 @@ def mqtt_on_message(mqttc, obj, msg):
         value = onoff + speed + '0'*10
         send_wait_response(dest=dev_id, value=value, log='fan')
 
+        # Immediately publish expected state to prevent HA from reverting
+        fan_state = 'off' if command == 'Off' else 'on'
+        fan_preset = command
+        state_data = json.dumps({'state': fan_state, 'preset': fan_preset})
+        threading.Thread(target=mqttc.publish, args=("kocom/livingroom/fan/state", state_data)).start()
+        logging.info(f'[FAN] Preset mode set to {command} - Published state: {fan_state}, preset: {fan_preset}')
+
     # kocom/livingroom/fan/command
     elif 'fan' in topic_d:
         fan_cfg = packet_config['parsing']['fan']
@@ -774,6 +781,13 @@ def mqtt_on_message(mqttc, obj, msg):
 
         value = onoff + speed + '0'*10
         send_wait_response(dest=dev_id, value=value, log='fan')
+
+        # Immediately publish expected state to prevent HA from reverting
+        fan_state = command  # 'on' or 'off'
+        fan_preset = 'Off' if command == 'off' else init_fan_mode
+        state_data = json.dumps({'state': fan_state, 'preset': fan_preset})
+        threading.Thread(target=mqttc.publish, args=("kocom/livingroom/fan/state", state_data)).start()
+        logging.info(f'[FAN] State set to {command} - Published state: {fan_state}, preset: {fan_preset}')
 
     # kocom/myhome/query/command
     elif 'query' in topic_d:
