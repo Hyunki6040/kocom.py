@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.05.008] - 2026-05-01
+
+### ✨ Added
+- **Batch Light Control switch** - Control all lights at once
+  - ON: 일괄소등 활성화 (Turn off all lights)
+  - OFF: 일괄소등 해제 (Disable batch mode)
+  - Entity: switch.batch_light_control
+  - Icon: mdi:lightbulb-group
+  - MQTT: kocom/myhome/batch/command, kocom/myhome/batch/state
+
+### 🔧 Technical Details
+- Discovery: homeassistant/switch/kocom_wallpad_batch/config
+- Uses special packets: batch_on (cmd 65), batch_off (cmd 66)
+- Packet type: 309c (batch control specific)
+
+---
+
 ## [2026.05.007] - 2026-05-01
 
 ### 🔧 Changed

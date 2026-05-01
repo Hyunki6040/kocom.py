@@ -29,7 +29,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # Version and constants -------------------------------
-SW_VERSION = '2026.05.007'
+SW_VERSION = '2026.05.008'
 CONFIG_FILE = 'kocom.conf'
 PACKETS_FILE = 'packets.json'
 PROTOCOL_FILE = 'protocol.json'
@@ -720,6 +720,31 @@ def mqtt_on_message(mqttc, obj, msg):
         elif command == 'off':
             threading.Thread(target=mqttc.publish, args=("kocom/myhome/elevator/state", state_off)).start()
 
+    # batch light control : kocom/myhome/batch/command
+    elif 'batch' in topic_d:
+        batch_on_packet = packet_config['special_packets']['batch_on']['hex']
+        batch_off_packet = packet_config['special_packets']['batch_off']['hex']
+        state_on = json.dumps({'state': 'on'})
+        state_off = json.dumps({'state': 'off'})
+
+        if command == 'on':
+            # Batch ON - Turn off all lights (일괄소등 활성화)
+            try:
+                rs485.write(bytearray.fromhex(batch_on_packet))
+                logging.info('[BATCH] Batch ON - All lights off')
+                threading.Thread(target=mqttc.publish, args=("kocom/myhome/batch/state", state_on)).start()
+            except Exception as e:
+                logging.error(f'[BATCH] Batch ON failed: {e}')
+
+        elif command == 'off':
+            # Batch OFF - Disable batch mode (일괄소등 해제)
+            try:
+                rs485.write(bytearray.fromhex(batch_off_packet))
+                logging.info('[BATCH] Batch OFF - Batch mode disabled')
+                threading.Thread(target=mqttc.publish, args=("kocom/myhome/batch/state", state_off)).start()
+            except Exception as e:
+                logging.error(f'[BATCH] Batch OFF failed: {e}')
+
     # kocom/livingroom/fan/set_preset_mode/command
     elif 'fan' in topic_d and 'set_preset_mode' in topic_d:
         fan_cfg = packet_config['parsing']['fan']
@@ -826,6 +851,7 @@ def discovery():
         if logtxt != "" and config.get('Log', 'show_mqtt_discovery') == 'True':
             logging.info(logtxt)
     publish_discovery('query')
+    publish_discovery('batch')
 
 #https://www.home-assistant.io/docs/mqtt/discovery/
 #<discovery_prefix>/<component>/<object_id>/config
@@ -1022,6 +1048,30 @@ def publish_discovery(dev, sub=''):
         payload = {
             'name': 'Query Status',
             'cmd_t': 'kocom/myhome/query/command',
+            'qos': 0,
+            'uniq_id': '{}_{}_{}'.format('kocom', 'wallpad', dev),
+            'device': {
+                'name': '코콤 스마트 월패드',
+                'ids': 'kocom_smart_wallpad',
+                'mf': 'KOCOM',
+                'mdl': '스마트 월패드',
+                'sw': SW_VERSION
+            }
+        }
+        logtxt='[MQTT Discovery|{}] data[{}]'.format(dev, topic)
+        mqttc.publish(topic, json.dumps(payload), retain=True)
+        if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
+            logging.info(logtxt)
+    elif dev == 'batch':
+        topic = 'homeassistant/switch/kocom_wallpad_batch/config'
+        payload = {
+            'name': 'Batch Light Control',
+            'cmd_t': 'kocom/myhome/batch/command',
+            'stat_t': 'kocom/myhome/batch/state',
+            'val_tpl': '{{ value_json.state }}',
+            'pl_on': 'on',
+            'pl_off': 'off',
+            'ic': 'mdi:lightbulb-group',
             'qos': 0,
             'uniq_id': '{}_{}_{}'.format('kocom', 'wallpad', dev),
             'device': {
