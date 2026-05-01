@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.05.007] - 2026-05-01
+
+### 🔧 Changed
+- **Elevator entity type** - Changed from switch to button
+  - Elevator has no "off" concept, only "call"
+  - Button provides better UX - single press to call
+  - Removed unnecessary state tracking (stat_t, val_tpl, pl_off)
+  - Discovery: homeassistant/switch → homeassistant/button
+
+---
+
 ## [2026.05.006] - 2026-05-01
 
 ### 🐛 Fixed

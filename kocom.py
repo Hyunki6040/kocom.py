@@ -29,7 +29,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # Version and constants -------------------------------
-SW_VERSION = '2026.05.006'
+SW_VERSION = '2026.05.007'
 CONFIG_FILE = 'kocom.conf'
 PACKETS_FILE = 'packets.json'
 PROTOCOL_FILE = 'protocol.json'
@@ -883,14 +883,11 @@ def publish_discovery(dev, sub=''):
         if logtxt != "" and config.get('Log', 'show_mqtt_publish') == 'True':
             logging.info(logtxt)
     elif dev == 'elevator':
-        topic = 'homeassistant/switch/kocom_wallpad_elevator/config'
+        topic = 'homeassistant/button/kocom_wallpad_elevator/config'
         payload = {
             'name': 'Elevator Call',
             'cmd_t': "kocom/myhome/elevator/command",
-            'stat_t': "kocom/myhome/elevator/state",
-            'val_tpl': "{{ value_json.state }}",
-            'pl_on': 'on',
-            'pl_off': 'off',
+            'payload_press': 'on',
             'ic': 'mdi:elevator',
             'qos': 0,
             'uniq_id': '{}_{}_{}'.format('kocom', 'wallpad', dev),

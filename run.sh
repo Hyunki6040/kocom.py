@@ -24,7 +24,7 @@ cp /kocom.py $SHARE_DIR/
 cp /packets.json $SHARE_DIR/
 cp /protocol.json $SHARE_DIR/
 
-echo "[Info] Starting Kocom Wallpad RS485 Integration v2026.05.006 for 덕계역금강펜트리움"
+echo "[Info] Starting Kocom Wallpad RS485 Integration v2026.05.007 for 덕계역금강펜트리움"
 echo "[Info] Python version: $(python3 --version)"
 echo "[Info] Configuration directory: $SHARE_DIR"
 
