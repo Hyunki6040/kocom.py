@@ -29,7 +29,7 @@ from paho.mqtt.client import MQTTMessage, Client
 
 
 # Version and constants -------------------------------
-SW_VERSION = '2026.05.008'
+SW_VERSION = '2026.05.009'
 CONFIG_FILE = 'kocom.conf'
 PACKETS_FILE = 'packets.json'
 PROTOCOL_FILE = 'protocol.json'
@@ -720,7 +720,7 @@ def mqtt_on_message(mqttc, obj, msg):
         elif command == 'off':
             threading.Thread(target=mqttc.publish, args=("kocom/myhome/elevator/state", state_off)).start()
 
-    # batch light control : kocom/myhome/batch/command
+    # all lights control : kocom/myhome/batch/command
     elif 'batch' in topic_d:
         batch_on_packet = packet_config['special_packets']['batch_on']['hex']
         batch_off_packet = packet_config['special_packets']['batch_off']['hex']
@@ -728,22 +728,22 @@ def mqtt_on_message(mqttc, obj, msg):
         state_off = json.dumps({'state': 'off'})
 
         if command == 'on':
-            # Batch ON - Turn off all lights (일괄소등 활성화)
-            try:
-                rs485.write(bytearray.fromhex(batch_on_packet))
-                logging.info('[BATCH] Batch ON - All lights off')
-                threading.Thread(target=mqttc.publish, args=("kocom/myhome/batch/state", state_on)).start()
-            except Exception as e:
-                logging.error(f'[BATCH] Batch ON failed: {e}')
-
-        elif command == 'off':
-            # Batch OFF - Disable batch mode (일괄소등 해제)
+            # All Lights ON - Disable batch mode (일괄소등 해제 = 모든 조명 켜기 가능)
             try:
                 rs485.write(bytearray.fromhex(batch_off_packet))
-                logging.info('[BATCH] Batch OFF - Batch mode disabled')
+                logging.info('[ALL LIGHTS] ON - Batch mode disabled, lights can be turned on')
+                threading.Thread(target=mqttc.publish, args=("kocom/myhome/batch/state", state_on)).start()
+            except Exception as e:
+                logging.error(f'[ALL LIGHTS] ON failed: {e}')
+
+        elif command == 'off':
+            # All Lights OFF - Turn off all lights (일괄소등 활성화 = 모든 조명 끄기)
+            try:
+                rs485.write(bytearray.fromhex(batch_on_packet))
+                logging.info('[ALL LIGHTS] OFF - All lights turned off')
                 threading.Thread(target=mqttc.publish, args=("kocom/myhome/batch/state", state_off)).start()
             except Exception as e:
-                logging.error(f'[BATCH] Batch OFF failed: {e}')
+                logging.error(f'[ALL LIGHTS] OFF failed: {e}')
 
     # kocom/livingroom/fan/set_preset_mode/command
     elif 'fan' in topic_d and 'set_preset_mode' in topic_d:
@@ -1065,7 +1065,7 @@ def publish_discovery(dev, sub=''):
     elif dev == 'batch':
         topic = 'homeassistant/switch/kocom_wallpad_batch/config'
         payload = {
-            'name': 'Batch Light Control',
+            'name': 'All Lights',
             'cmd_t': 'kocom/myhome/batch/command',
             'stat_t': 'kocom/myhome/batch/state',
             'val_tpl': '{{ value_json.state }}',

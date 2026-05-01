@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.05.009] - 2026-05-01
+
+### 🔧 Changed
+- **All Lights switch logic reversed** - More intuitive English UX
+  - Entity name: "Batch Light Control" → "All Lights"
+  - ON: Disable batch mode (lights can be turned on)
+  - OFF: Turn off all lights (enable batch mode)
+  - Semantic meaning: "All Lights ON" = lights available, "All Lights OFF" = all lights off
+  - Entity: switch.all_lights
+  - MQTT: kocom/myhome/batch/command, kocom/myhome/batch/state
+
+---
+
 ## [2026.05.008] - 2026-05-01
 
 ### ✨ Added
